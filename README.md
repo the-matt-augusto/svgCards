@@ -66,6 +66,8 @@ Para embutir em seu `README.md`, utilize o código abaixo:
 [![GitHub Card](https://svg-cards-five.vercel.app/api/card?username=the-matt-augusto&theme=dracula)](https://github.com/the-matt-augusto)
 ```
 
+[![GitHub Card](https://svg-cards-five.vercel.app/api/card?username=the-matt-augusto&theme=dracula)](https://github.com/the-matt-augusto)
+
 ## Licença
 Este projeto está sob a licença [MIT](LICENSE).
 
