@@ -1,0 +1,12 @@
+{
+  "name": "svg-cards",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {},
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vercel/node": "^2.3.0",
+    "typescript": "^5.3.3",
+    "vercel": "^28.18.5"
+  }
+}
