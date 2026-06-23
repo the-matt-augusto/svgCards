@@ -7,7 +7,7 @@ Este projeto é um gerador dinâmico de cartões de perfil do GitHub que renderi
 O projeto foi desenvolvido como uma Vercel Serverless Function em TypeScript. O endpoint em `/api/card.ts` busca os dados diretamente da API do GitHub, converte e embute a imagem do avatar em formato Base64 (Data URI) dentro do SVG usando `xlink:href` para garantir a compatibilidade com o proxy de imagem do GitHub (Camo), e aplica cache de resposta para otimizar as requisições.
 
 Destaques:
-*   **Temas**: Suporte para temas `dark` (Dracula/Tokyo Night) e `light` (GitHub Light) através do parâmetro `?theme=`.
+*   **Temas**: Suporte para os temas `light`, `dark`, `dracula`, `nord`, `gruvbox` e `catppuccin` através do parâmetro `?theme=`.
 *   **Tratamento de Erros**: Usuários inválidos ou erros de API retornam um cartão de erro estilizado e amigável.
 *   **Segurança**: Comunicação autenticada com a API do GitHub sem expor tokens ou dados sensíveis.
 *   **Performance**: Cache das respostas configurado com `Cache-Control`.
@@ -56,20 +56,14 @@ Para utilizar os cartões, faça uma requisição ao endpoint `/api/card` passan
 | Parâmetro | Tipo | Descrição | Valores Aceitos | Padrão |
 | :--- | :--- | :--- | :--- | :--- |
 | `username` | String | Nome de usuário do GitHub. | Qualquer usuário ativo. | (Obrigatório) |
-| `theme` | String | Paleta de cores do cartão. | `dark` ou `light` | `dark` |
+| `theme` | String | Paleta de cores do cartão. | `light`, `dark`, `dracula`, `nord`, `gruvbox`, `catppuccin` | `dark` |
 
 ### Exemplo de Uso em Markdown
 
 Para embutir em seu `README.md`, utilize o código abaixo:
 
-**Tema Escuro (Dark):**
 ```markdown
-[![GitHub Card](https://svg-cards-five.vercel.app/api/card?username=the-matt-augusto&theme=dark)](https://github.com/the-matt-augusto)
-```
-
-**Tema Claro (Light):**
-```markdown
-[![GitHub Card](https://svg-cards-five.vercel.app/api/card?username=the-matt-augusto&theme=light)](https://github.com/the-matt-augusto)
+[![GitHub Card](https://svg-cards-five.vercel.app/api/card?username=the-matt-augusto&theme=dracula)](https://github.com/the-matt-augusto)
 ```
 
 ## Licença

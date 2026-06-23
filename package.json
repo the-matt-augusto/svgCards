@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {},
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "@vercel/node": "^2.3.0",
-    "typescript": "^5.3.3",
-    "vercel": "^28.18.5"
+    "@types/node": "^26.0.0",
+    "@vercel/node": "^5.8.18",
+    "typescript": "^6.0.3",
+    "vercel": "^54.15.0"
   }
 }
