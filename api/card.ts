@@ -3,48 +3,19 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 interface ThemeConfig {
   bg: string;
   border: string;
-  name: string;
-  login: string;
-  label: string;
-  reposValue: string;
-  followersValue: string;
-  avatarBorder: string;
-  errorBg: string;
-  errorBorder: string;
-  errorIcon: string;
-  errorText: string;
+  text: string;
+  subtext: string;
+  accent: string;
 }
 
-const themes: Record<string, ThemeConfig> = {
-  dark: {
-    bg: '#1a1b26',
-    border: '#414868',
-    name: '#c0caf5',
-    login: '#bb9af3',
-    label: '#a9b1d6',
-    reposValue: '#73daca',
-    followersValue: '#ff9e64',
-    avatarBorder: '#7aa2f7',
-    errorBg: '#1a1b26',
-    errorBorder: '#f7768e',
-    errorIcon: '#f7768e',
-    errorText: '#a9b1d6',
-  },
-  light: {
-    bg: '#f6f8fa',
-    border: '#d0d7de',
-    name: '#24292f',
-    login: '#57606a',
-    label: '#57606a',
-    reposValue: '#0969da',
-    followersValue: '#bc4c00',
-    avatarBorder: '#0969da',
-    errorBg: '#fff5f5',
-    errorBorder: '#cf222e',
-    errorIcon: '#cf222e',
-    errorText: '#57606a',
-  },
-};
+const themes = {
+  light:      { bg: "#ffffff", border: "#d0d7de", text: "#1f2328", subtext: "#656d76", accent: "#0969da" },
+  dark:       { bg: "#0d1117", border: "#30363d", text: "#e6edf3", subtext: "#8b949e", accent: "#58a6ff" },
+  dracula:    { bg: "#282a36", border: "#44475a", text: "#f8f8f2", subtext: "#6272a4", accent: "#bd93f9" },
+  nord:       { bg: "#2e3440", border: "#434c5e", text: "#eceff4", subtext: "#81a1c1", accent: "#88c0d0" },
+  gruvbox:    { bg: "#282828", border: "#504945", text: "#ebdbb2", subtext: "#a89984", accent: "#fabd2f" },
+  catppuccin: { bg: "#1e1e2e", border: "#313244", text: "#cdd6f4", subtext: "#a6adc8", accent: "#cba6f7" },
+} as const;
 
 const fonts = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 
@@ -98,18 +69,18 @@ function renderErrorCard(title: string, message: string, theme: ThemeConfig): st
   const cleanLine2 = escapeXml(line2);
 
   const textElement = line2
-    ? `<text x="120" y="93" font-family="${fonts}" font-size="14" fill="${theme.errorText}">${cleanLine1}</text>
-  <text x="120" y="115" font-family="${fonts}" font-size="14" fill="${theme.errorText}">${cleanLine2}</text>`
-    : `<text x="120" y="100" font-family="${fonts}" font-size="14" fill="${theme.errorText}">${cleanLine1}</text>`;
+    ? `<text x="120" y="93" font-family="${fonts}" font-size="14" fill="${theme.subtext}">${cleanLine1}</text>
+  <text x="120" y="115" font-family="${fonts}" font-size="14" fill="${theme.subtext}">${cleanLine2}</text>`
+    : `<text x="120" y="100" font-family="${fonts}" font-size="14" fill="${theme.subtext}">${cleanLine1}</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="450" height="160" viewBox="0 0 450 160">
-  <rect width="100%" height="100%" rx="16" fill="${theme.errorBg}" stroke="${theme.errorBorder}" stroke-width="1.5"/>
+  <rect width="100%" height="100%" rx="16" fill="${theme.bg}" stroke="${theme.border}" stroke-width="1.5"/>
   <g transform="translate(30, 45)">
-    <circle cx="35" cy="35" r="30" fill="${theme.errorIcon}" opacity="0.1" />
-    <circle cx="35" cy="35" r="25" fill="none" stroke="${theme.errorIcon}" stroke-width="3" />
-    <path d="M 35 23 L 35 43 M 35 48 L 35 50" stroke="${theme.errorIcon}" stroke-width="4" stroke-linecap="round" />
+    <circle cx="35" cy="35" r="30" fill="${theme.accent}" opacity="0.1" />
+    <circle cx="35" cy="35" r="25" fill="none" stroke="${theme.accent}" stroke-width="3" />
+    <path d="M 35 23 L 35 43 M 35 48 L 35 50" stroke="${theme.accent}" stroke-width="4" stroke-linecap="round" />
   </g>
-  <text x="120" y="70" font-family="${fonts}" font-size="20" font-weight="bold" fill="${theme.errorBorder}">${cleanTitle}</text>
+  <text x="120" y="70" font-family="${fonts}" font-size="20" font-weight="bold" fill="${theme.accent}">${cleanTitle}</text>
   ${textElement}
 </svg>`;
 }
@@ -118,9 +89,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=1800, stale-while-revalidate=86400');
 
-  const themeParam = req.query.theme;
-  const themeName = (themeParam === 'light') ? 'light' : 'dark';
-  const theme = themes[themeName];
+  const requested = String(req.query.theme ?? "dark").toLowerCase();
+  const theme = (requested in themes) ? themes[requested as keyof typeof themes] : themes.dark;
 
   const username = req.query.username;
 
@@ -174,14 +144,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   </defs>
   <rect width="100%" height="100%" rx="16" fill="${theme.bg}" stroke="${theme.border}" stroke-width="1.5"/>
   
-  <circle cx="70" cy="80" r="46" fill="none" stroke="${theme.avatarBorder}" stroke-width="2" />
+  <circle cx="70" cy="80" r="46" fill="none" stroke="${theme.accent}" stroke-width="2" />
   <image xlink:href="${cleanAvatarUrl}" x="25" y="35" width="90" height="90" clip-path="url(#avatar-clip)" />
   
-  <text x="135" y="60" font-family="${fonts}" font-size="22" font-weight="bold" fill="${theme.name}">${cleanName}</text>
-  <text x="135" y="85" font-family="${fonts}" font-size="16" fill="${theme.login}">@${cleanLogin}</text>
+  <text x="135" y="60" font-family="${fonts}" font-size="22" font-weight="bold" fill="${theme.text}">${cleanName}</text>
+  <text x="135" y="85" font-family="${fonts}" font-size="16" fill="${theme.subtext}">@${cleanLogin}</text>
   
-  <text x="135" y="120" font-family="${fonts}" font-size="14" fill="${theme.label}">Repos: <tspan fill="${theme.reposValue}" font-weight="bold">${cleanRepos}</tspan></text>
-  <text x="250" y="120" font-family="${fonts}" font-size="14" fill="${theme.label}">Followers: <tspan fill="${theme.followersValue}" font-weight="bold">${cleanFollowers}</tspan></text>
+  <text x="135" y="120" font-family="${fonts}" font-size="14" fill="${theme.subtext}">Repos: <tspan fill="${theme.accent}" font-weight="bold">${cleanRepos}</tspan></text>
+  <text x="250" y="120" font-family="${fonts}" font-size="14" fill="${theme.subtext}">Followers: <tspan fill="${theme.accent}" font-weight="bold">${cleanFollowers}</tspan></text>
 </svg>`;
 
     return res.status(200).send(svg);
