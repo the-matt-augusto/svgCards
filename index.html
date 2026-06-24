@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG Cards</title>
+  
+  <!-- Fontes Premium -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Reset & Variáveis */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    :root {
+      --bg-dark: #080b11;
+      --bg-card: rgba(13, 17, 28, 0.7);
+      --bg-input: rgba(255, 255, 255, 0.03);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+      --accent-primary: #6366f1;
+      --accent-secondary: #a855f7;
+      --shadow-premium: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 40%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-x: hidden;
+    }
+
+    /* Layout Principal */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 40px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .logo-wrapper {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--accent-gradient);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px -6px rgba(99, 102, 241, 0.5);
+    }
+
+    .logo-icon svg {
+      width: 26px;
+      height: 26px;
+      fill: #fff;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      font-weight: 400;
+    }
+
+    /* Painel Principal */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 30px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      box-shadow: var(--shadow-premium);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: var(--border-hover);
+    }
+
+    /* Formulários e Inputs */
+    .form-group {
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      pointer-events: none;
+      transition: color 0.3s ease;
+    }
+
+    .input-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 16px 16px 48px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    }
+
+    input[type="text"]:focus + .input-icon {
+      color: var(--accent-primary);
+    }
+
+    /* Custom Dropdown (Theme Selector) */
+    .custom-select-container {
+      position: relative;
+      user-select: none;
+    }
+
+    .custom-select-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .custom-select-trigger:hover {
+      border-color: var(--border-hover);
+    }
+
+    .custom-select-container.open .custom-select-trigger {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    }
+
+    .custom-select-trigger-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .chevron-icon {
+      width: 18px;
+      height: 18px;
+      fill: var(--text-muted);
+      transition: transform 0.3s ease;
+    }
+
+    .custom-select-container.open .chevron-icon {
+      transform: rotate(180deg);
+    }
+
+    .custom-select-options {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: #0d121f;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      z-index: 10;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 6px;
+    }
+
+    .custom-select-container.open .custom-select-options {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .custom-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+      font-weight: 500;
+    }
+
+    .custom-option:hover, .custom-option.selected {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    .custom-option.selected {
+      color: var(--accent-primary);
+    }
+
+    .theme-preview-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .theme-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Preview Section */
+    .preview-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      position: relative;
+      width: 100%;
+      max-width: 510px; /* 450px card + 60px padding */
+      margin: 0 auto;
+    }
+
+    .preview-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      align-self: flex-start;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-title::before {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 18px;
+      background: var(--accent-gradient);
+      border-radius: 2px;
+    }
+
+    .preview-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 450px;
+      margin: 0 auto;
+      aspect-ratio: 450 / 160;
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: border-color 0.3s ease;
+    }
+
+    .preview-wrapper.loading {
+      border-color: var(--accent-primary);
+    }
+
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+      border-radius: var(--radius-md);
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    /* Placeholder do preview */
+    .preview-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .placeholder-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));
+      animation: bounce 2s infinite ease-in-out;
+    }
+
+    .placeholder-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    /* Loader */
+    .loader {
+      display: none;
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(99, 102, 241, 0.1);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s infinite linear;
+      z-index: 2;
+    }
+
+    /* Copy Output Boxes */
+    .output-section {
+      width: 100%;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .output-box {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color 0.3s ease;
+    }
+
+    .output-box:focus-within {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .output-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .output-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .output-code {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: all;
+    }
+
+    /* Botão de Copiar */
+    .btn-copy {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-muted);
+      position: relative;
+    }
+
+    .btn-copy:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border-color: var(--border-hover);
+    }
+
+    .btn-copy:active {
+      transform: scale(0.95);
+    }
+
+    .btn-copy svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .btn-copy.copied {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: #10b981;
+      color: #10b981;
+      animation: pop 0.3s ease;
+    }
+
+    /* Notificação flutuante de cópia */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #10b981;
+      color: white;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      border-top: 1px solid var(--border-color);
+      margin-top: 40px;
+    }
+
+    footer a {
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: text-decoration 0.2s;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Animações */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo-wrapper">
+        <div class="logo-icon">
+          <!-- Ícone SVG de Cartão -->
+          <svg viewBox="0 0 24 24">
+            <path d="M20,4H4C2.89,4 2,4.89 2,6V18C2,19.1 2.89,20 4,20H20C21.1,20 22,19.1 22,18V6C22,4.89 21.1,4 20,4M20,18H4V12H20V18M20,8H4V6H20V8M6,14H10V16H6V14Z"/>
+          </svg>
+        </div>
+      </div>
+      <h1>SVG Cards</h1>
+      <p class="subtitle">Gere cartões dinâmicos e elegantes das suas estatísticas do GitHub</p>
+    </header>
+
+    <main class="dashboard">
+      <!-- Painel de Configurações -->
+      <section class="card">
+        <div class="form-group">
+          <label for="username">Usuário do GitHub</label>
+          <div class="input-wrapper">
+            <div class="input-icon">
+              <!-- Ícone GitHub -->
+              <svg viewBox="0 0 24 24">
+                <path d="M12,2A10,10 0 0,0 2,12C2,16.53 4.91,20.38 9,21.69C9.5,21.78 9.68,21.48 9.68,21.22C9.68,21 9.67,20.3 9.67,19.46C6.89,20.06 6.3,18.12 6.3,18.12C5.84,16.97 5.19,16.66 5.19,16.66C4.28,16.04 5.27,16.05 5.27,16.05C6.27,16.12 6.8,17.08 6.8,17.08C7.69,18.61 9.14,18.17 9.71,17.91C9.8,17.27 10.05,16.83 10.33,16.58C8.11,16.33 5.78,15.47 5.78,11.64C5.78,10.55 6.17,9.66 6.8,8.96C6.7,8.7 6.35,7.69 6.9,6.32C6.9,6.32 7.74,6.05 9.65,7.35C10.45,7.13 11.3,7.03 12,7.03C12.7,7.03 13.55,7.13 14.35,7.35C16.26,6.05 17.1,6.32 17.1,6.32C17.65,7.69 17.3,8.7 17.2,8.96C17.83,9.66 18.22,10.55 18.22,11.64C18.22,15.48 15.89,16.32 13.66,16.57C14.03,16.89 14.35,17.5 14.35,18.44C14.35,19.79 14.34,20.89 14.34,21.22C14.34,21.48 14.5,21.79 15,21.69C19.08,20.37 22,16.53 22,12A10,10 0 0,0 12,2Z"/>
+              </svg>
+            </div>
+            <input type="text" id="username" placeholder="Digite seu username (ex: octocat)" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Tema do Cartão</label>
+          <div class="custom-select-container" id="themeSelect">
+            <div class="custom-select-trigger">
+              <div class="custom-select-trigger-content">
+                <div class="theme-preview-dots" id="triggerDots">
+                  <!-- Inserido dinamicamente -->
+                </div>
+                <span id="triggerText">Dark</span>
+              </div>
+              <svg class="chevron-icon" viewBox="0 0 24 24">
+                <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"/>
+              </svg>
+            </div>
+            <div class="custom-select-options" id="selectOptions">
+              <!-- Opções renderizadas via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Painel de Preview e Copy -->
+      <section class="card preview-card">
+        <div class="preview-title">Visualização em Tempo Real</div>
+        
+        <div class="preview-wrapper" id="previewWrapper">
+          <div class="loader" id="loader"></div>
+          
+          <div class="preview-placeholder" id="placeholder">
+            <div class="placeholder-icon">✨</div>
+            <div class="placeholder-text">Digite um username para carregar o preview.</div>
+          </div>
+          
+          <img class="preview-image" id="previewImg" alt="GitHub Profile Card">
+        </div>
+
+        <div class="output-section">
+          <!-- Markdown Box -->
+          <div class="output-box">
+            <div class="output-details">
+              <span class="output-label">Markdown</span>
+              <div class="output-code" id="markdownCode">[![GitHub Card](...)...</div>
+            </div>
+            <button class="btn-copy" id="btnCopyMarkdown" title="Copiar Markdown">
+              <svg viewBox="0 0 24 24">
+                <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- HTML Box -->
+          <div class="output-box">
+            <div class="output-details">
+              <span class="output-label">HTML</span>
+              <div class="output-code" id="htmlCode">&lt;a href="..."&gt;&lt;img src="..." /&gt;&lt;/a&gt;</div>
+            </div>
+            <button class="btn-copy" id="btnCopyHtml" title="Copiar HTML">
+              <svg viewBox="0 0 24 24">
+                <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Link Direto -->
+          <div class="output-box">
+            <div class="output-details">
+              <span class="output-label">URL da Imagem</span>
+              <div class="output-code" id="urlCode">https://...</div>
+            </div>
+            <button class="btn-copy" id="btnCopyUrl" title="Copiar URL">
+              <svg viewBox="0 0 24 24">
+                <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Desenvolvido para <a href="https://github.com/the-matt-augusto/svgCards" target="_blank" rel="noopener">svgCards</a>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast">Copiado com sucesso!</div>
+
+  <script>
+    // Paletas dos Temas (conforme api/card.ts)
+    const themes = {
+      light:      { label: "Light",      bg: "#ffffff", accent: "#0969da", text: "#1f2328" },
+      dark:       { label: "Dark",       bg: "#0d1117", accent: "#58a6ff", text: "#e6edf3" },
+      dracula:    { label: "Dracula",    bg: "#282a36", accent: "#bd93f9", text: "#f8f8f2" },
+      nord:       { label: "Nord",       bg: "#2e3440", accent: "#88c0d0", text: "#eceff4" },
+      gruvbox:    { label: "Gruvbox",    bg: "#282828", accent: "#fabd2f", text: "#ebdbb2" },
+      catppuccin: { label: "Catppuccin", bg: "#1e1e2e", accent: "#cba6f7", text: "#cdd6f4" },
+    };
+
+    let selectedTheme = 'dark';
+    let debounceTimer;
+
+    // Elementos DOM
+    const usernameInput = document.getElementById('username');
+    const themeSelect = document.getElementById('themeSelect');
+    const triggerText = document.getElementById('triggerText');
+    const triggerDots = document.getElementById('triggerDots');
+    const selectOptions = document.getElementById('selectOptions');
+    
+    const previewWrapper = document.getElementById('previewWrapper');
+    const previewImg = document.getElementById('previewImg');
+    const placeholder = document.getElementById('placeholder');
+    const loader = document.getElementById('loader');
+
+    const markdownCode = document.getElementById('markdownCode');
+    const htmlCode = document.getElementById('htmlCode');
+    const urlCode = document.getElementById('urlCode');
+
+    const toast = document.getElementById('toast');
+
+    // Inicialização do Custom Dropdown
+    function initDropdown() {
+      // Cria as opções
+      Object.entries(themes).forEach(([key, info]) => {
+        const option = document.createElement('div');
+        option.className = `custom-option ${key === selectedTheme ? 'selected' : ''}`;
+        option.dataset.value = key;
+        option.innerHTML = `
+          <span>${info.label}</span>
+          <div class="theme-preview-dots">
+            <div class="theme-dot" style="background-color: ${info.bg}"></div>
+            <div class="theme-dot" style="background-color: ${info.accent}"></div>
+            <div class="theme-dot" style="background-color: ${info.text}"></div>
+          </div>
+        `;
+        selectOptions.appendChild(option);
+      });
+
+      updateTriggerContent(selectedTheme);
+
+      // Eventos de clique
+      themeSelect.querySelector('.custom-select-trigger').addEventListener('click', (e) => {
+        e.stopPropagation();
+        themeSelect.classList.toggle('open');
+      });
+
+      document.addEventListener('click', () => {
+        themeSelect.classList.remove('open');
+      });
+
+      selectOptions.addEventListener('click', (e) => {
+        const option = e.target.closest('.custom-option');
+        if (!option) return;
+
+        const value = option.dataset.value;
+        selectTheme(value);
+      });
+    }
+
+    function updateTriggerContent(themeKey) {
+      const info = themes[themeKey];
+      triggerText.textContent = info.label;
+      triggerDots.innerHTML = `
+        <div class="theme-dot" style="background-color: ${info.bg}"></div>
+        <div class="theme-dot" style="background-color: ${info.accent}"></div>
+        <div class="theme-dot" style="background-color: ${info.text}"></div>
+      `;
+    }
+
+    function selectTheme(themeKey) {
+      selectedTheme = themeKey;
+      
+      // Atualiza classe selecionada
+      selectOptions.querySelectorAll('.custom-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.value === themeKey);
+      });
+
+      updateTriggerContent(themeKey);
+      themeSelect.classList.remove('open');
+      
+      updatePreview();
+    }
+
+    // Gerador de URLs e Snippets
+    function getCardUrl(username, theme) {
+      const host = window.location.origin;
+      return `${host}/api/card?username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+    }
+
+    // Retorna URL canônica para produção no Vercel se não estiver localmente
+    function getCardUrlForSnippet(username, theme) {
+      let host = window.location.origin;
+      // Se estiver local, mantém o local, senão usa a origem
+      return `${host}/api/card?username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+    }
+
+    function getGitHubProfileUrl(username) {
+      return `https://github.com/${encodeURIComponent(username)}`;
+    }
+
+    function updateSnippets(username) {
+      if (!username) {
+        markdownCode.textContent = '[! [GitHub Card](...)...';
+        htmlCode.textContent = '<a href="..."...';
+        urlCode.textContent = 'https://...';
+        return;
+      }
+
+      const cardUrl = getCardUrlForSnippet(username, selectedTheme);
+      const profileUrl = getGitHubProfileUrl(username);
+
+      const markdown = `[![GitHub Card](${cardUrl})](${profileUrl})`;
+      const html = `<a href="${profileUrl}"><img src="${cardUrl}" alt="GitHub Card" /></a>`;
+
+      markdownCode.textContent = markdown;
+      htmlCode.textContent = html;
+      urlCode.textContent = cardUrl;
+    }
+
+    // Controle de Preview e Loader
+    function updatePreview() {
+      const username = usernameInput.value.trim();
+      updateSnippets(username);
+
+      if (!username) {
+        previewImg.style.display = 'none';
+        placeholder.style.display = 'flex';
+        loader.style.display = 'none';
+        previewWrapper.classList.remove('loading');
+        return;
+      }
+
+      // Ativa loading
+      loader.style.display = 'block';
+      placeholder.style.display = 'none';
+      previewWrapper.classList.add('loading');
+
+      const cardUrl = getCardUrl(username, selectedTheme);
+      
+      // Cria uma nova imagem temporária para gerenciar o load e evitar piscadas
+      const tempImg = new Image();
+      tempImg.src = cardUrl;
+      
+      tempImg.onload = () => {
+        previewImg.src = cardUrl;
+        previewImg.style.display = 'block';
+        loader.style.display = 'none';
+        previewWrapper.classList.remove('loading');
+      };
+
+      tempImg.onerror = () => {
+        previewImg.style.display = 'none';
+        placeholder.style.display = 'flex';
+        placeholder.querySelector('.placeholder-text').textContent = 'Erro ao carregar o cartão. Tente novamente.';
+        loader.style.display = 'none';
+        previewWrapper.classList.remove('loading');
+      };
+    }
+
+    // Copiar Texto para Clipboard
+    function setupCopyBtn(btnId, codeElement) {
+      const btn = document.getElementById(btnId);
+      btn.addEventListener('click', () => {
+        const text = codeElement.textContent;
+        if (!text || text.includes('...') || text === 'https://...') return;
+
+        navigator.clipboard.writeText(text).then(() => {
+          btn.classList.add('copied');
+          btn.innerHTML = `
+            <svg viewBox="0 0 24 24">
+              <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" fill="currentColor"/>
+            </svg>
+          `;
+          
+          showToast();
+
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = `
+              <svg viewBox="0 0 24 24">
+                <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+              </svg>
+            `;
+          }, 2000);
+        });
+      });
+    }
+
+    function showToast() {
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // Event Listeners
+    usernameInput.addEventListener('input', () => {
+      // Placeholder instantâneo ao limpar
+      if (!usernameInput.value.trim()) {
+        updatePreview();
+        return;
+      }
+      
+      clearTimeout(debounceTimer);
+      // Debounce de 400ms para evitar chamadas de API do GitHub desnecessárias enquanto digita
+      debounceTimer = setTimeout(updatePreview, 400);
+    });
+
+    // Inicia tudo
+    initDropdown();
+    setupCopyBtn('btnCopyMarkdown', markdownCode);
+    setupCopyBtn('btnCopyHtml', htmlCode);
+    setupCopyBtn('btnCopyUrl', urlCode);
+  </script>
+</body>
+</html>
