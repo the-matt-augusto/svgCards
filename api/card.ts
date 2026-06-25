@@ -34,9 +34,25 @@ function escapeXml(str: string | null | undefined): string {
   });
 }
 
+function formatNumber(num: number): string {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  }
+  return String(num);
+}
+
 async function fetchAvatarBase64(url: string): Promise<string> {
+  if (!url || !url.startsWith('http')) return url;
   try {
-    const res = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s limit
+    
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
     if (!res.ok) return url;
     const arrayBuffer = await res.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
@@ -123,6 +139,7 @@ export default async function handler(req: Request): Promise<Response> {
         name
         login
         avatarUrl(size: 120)
+        createdAt
         followers { totalCount }
         repositories(first: 100, ownerAffiliations: OWNER,
                      orderBy: {field: STARGAZERS, direction: DESC}) {
@@ -130,6 +147,20 @@ export default async function handler(req: Request): Promise<Response> {
           nodes {
             stargazerCount
             primaryLanguage { name color }
+          }
+        }
+        contributionsCollection {
+          totalCommitContributions
+          totalPullRequestContributions
+          totalIssueContributions
+          contributionCalendar {
+            totalContributions
+            weeks {
+              contributionDays {
+                date
+                contributionCount
+              }
+            }
           }
         }
       }
@@ -163,12 +194,12 @@ export default async function handler(req: Request): Promise<Response> {
     const cleanLogin = escapeXml(user.login);
     const avatarBase64 = await fetchAvatarBase64(user.avatarUrl);
     const cleanAvatarUrl = escapeXml(avatarBase64);
-    const cleanRepos = escapeXml(String(user.repositories.totalCount));
-    const cleanFollowers = escapeXml(String(user.followers.totalCount));
+    const cleanRepos = escapeXml(formatNumber(user.repositories.totalCount));
+    const cleanFollowers = escapeXml(formatNumber(user.followers.totalCount));
 
     // Calcular total de estrelas e top linguagens
     const totalStars = user.repositories.nodes.reduce((s: number, r: any) => s + r.stargazerCount, 0);
-    const cleanStars = escapeXml(String(totalStars));
+    const cleanStars = escapeXml(formatNumber(totalStars));
 
     const langMap: Record<string, { count: number, color: string }> = {};
     for (const repo of user.repositories.nodes) {
@@ -186,33 +217,74 @@ export default async function handler(req: Request): Promise<Response> {
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
 
+    // Calcular ano de criação e informações de contribuição
+    const memberSince = new Date(user.createdAt).getUTCFullYear();
+    const contributions = user.contributionsCollection || {};
+    const commits = contributions.totalCommitContributions || 0;
+    const prs = contributions.totalPullRequestContributions || 0;
+    const issues = contributions.totalIssueContributions || 0;
+    const totalContributions = contributions.contributionCalendar?.totalContributions || 0;
+
+    // Calcular a sequência atual (streak) percorrendo os dias de trás pra frente
+    const weeks = contributions.contributionCalendar?.weeks || [];
+    const days = weeks.flatMap((w: any) => w?.contributionDays || []);
+
+    let streak = 0;
+    for (let i = days.length - 1; i >= 0; i--) {
+      const count = days[i]?.contributionCount || 0;
+      if (count > 0) {
+        streak++;
+      } else {
+        // Se hoje estiver zerado, não quebra a sequência; conta a partir de ontem
+        if (i === days.length - 1 && streak === 0) {
+          continue;
+        } else {
+          break;
+        }
+      }
+    }
+
+    const cleanStreak = escapeXml(formatNumber(streak));
+    const cleanContributions = escapeXml(formatNumber(totalContributions));
+    const cleanCommits = escapeXml(formatNumber(commits));
+    const cleanPrs = escapeXml(formatNumber(prs));
+    const cleanIssues = escapeXml(formatNumber(issues));
+
     let langsSvg = '';
     sortedLangs.forEach((lang, i) => {
-      const cx = 135 + i * 100;
+      const cx = 30 + i * 130;
       const tx = cx + 10;
       const escapedLangName = escapeXml(lang.name);
       langsSvg += `
-  <circle cx="${cx}" cy="122" r="4.5" fill="${lang.color}" />
-  <text x="${tx}" y="126" font-family="${fonts}" font-size="12" fill="${theme.subtext}">${escapedLangName}</text>`;
+  <circle cx="${cx}" cy="202" r="4.5" fill="${lang.color}" />
+  <text x="${tx}" y="206" font-family="${fonts}" font-size="12" fill="${theme.subtext}">${escapedLangName}</text>`;
     });
 
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="450" height="150" viewBox="0 0 450 150">
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="450" height="225" viewBox="0 0 450 225">
   <defs>
     <clipPath id="avatar-clip">
-      <circle cx="70" cy="75" r="40" />
+      <circle cx="70" cy="65" r="40" />
     </clipPath>
   </defs>
   <rect width="100%" height="100%" rx="16" fill="${theme.bg}" stroke="${theme.border}" stroke-width="1.5"/>
   
-  <circle cx="70" cy="75" r="41" fill="none" stroke="${theme.accent}" stroke-width="2" />
-  <image xlink:href="${cleanAvatarUrl}" x="30" y="35" width="80" height="80" clip-path="url(#avatar-clip)" />
+  <circle cx="70" cy="65" r="41" fill="none" stroke="${theme.accent}" stroke-width="2" />
+  <image xlink:href="${cleanAvatarUrl}" x="30" y="25" width="80" height="80" clip-path="url(#avatar-clip)" />
   
-  <text x="135" y="46" font-family="${fonts}" font-size="22" font-weight="bold" fill="${theme.text}">${cleanName}</text>
-  <text x="135" y="68" font-family="${fonts}" font-size="15" fill="${theme.subtext}">@${cleanLogin}</text>
+  <text x="135" y="40" font-family="${fonts}" font-size="20" font-weight="bold" fill="${theme.text}">${cleanName}</text>
+  <text x="135" y="60" font-family="${fonts}" font-size="14" fill="${theme.subtext}">@${cleanLogin}</text>
+  <text x="135" y="78" font-family="${fonts}" font-size="12" fill="${theme.subtext}">Membro desde ${memberSince}</text>
   
-  <text x="135" y="98" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Repos: <tspan fill="${theme.accent}" font-weight="bold">${cleanRepos}</tspan></text>
-  <text x="230" y="98" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Followers: <tspan fill="${theme.accent}" font-weight="bold">${cleanFollowers}</tspan></text>
-  <text x="340" y="98" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Stars: <tspan fill="${theme.accent}" font-weight="bold">${cleanStars}</tspan></text>
+  <text x="135" y="102" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Repos: <tspan fill="${theme.accent}" font-weight="bold">${cleanRepos}</tspan></text>
+  <text x="210" y="102" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Seguidores: <tspan fill="${theme.accent}" font-weight="bold">${cleanFollowers}</tspan></text>
+  <text x="330" y="102" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Estrelas: <tspan fill="${theme.accent}" font-weight="bold">${cleanStars}</tspan></text>
+  
+  <line x1="30" y1="118" x2="420" y2="118" stroke="${theme.border}" stroke-width="1" />
+  
+  <text x="30" y="146" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Sequência atual: <tspan fill="${theme.accent}" font-weight="bold">${cleanStreak}</tspan> 🔥</text>
+  <text x="240" y="146" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Contribuições no ano: <tspan fill="${theme.accent}" font-weight="bold">${cleanContributions}</tspan></text>
+  
+  <text x="30" y="173" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Commits: <tspan fill="${theme.accent}" font-weight="bold">${cleanCommits}</tspan>  •  PRs: <tspan fill="${theme.accent}" font-weight="bold">${cleanPrs}</tspan>  •  Issues: <tspan fill="${theme.accent}" font-weight="bold">${cleanIssues}</tspan></text>
   
   ${langsSvg}
 </svg>`;

@@ -8,7 +8,11 @@ O projeto foi desenvolvido em TypeScript utilizando as **Vercel Edge Functions (
 
 Destaques:
 *   **Métricas do Perfil**: Exibe contagem de repositórios, seguidores, soma total de estrelas de seus repositórios e as 3 linguagens mais usadas (com círculos coloridos com a cor oficial de cada linguagem).
-*   **Design Compacto**: Cartões otimizados e mais elegantes com resolução de 450x150px.
+*   **Métricas de Atividade (Novo!)**: Exibe em um bloco dedicado a sequência atual de dias ativos (streak 🔥), total de contribuições no ano, linha detalhada de commits/PRs/issues, e o ano de criação da conta ("Membro desde YYYY").
+*   **Sequência Resiliente**: A sequência atual (streak) é computada percorrendo os dias de trás para frente. Caso o dia de hoje ainda não tenha contribuições (esteja zerado), o streak não é resetado para 0, continuando a contagem a partir de ontem.
+*   **Formatação Inteligente**: Valores numéricos grandes (seguidores, estrelas, commits, etc.) são convertidos para notação compacta (ex: `1.2k` ou `2.5M`), garantindo que o layout nunca sofra sobreposição de textos.
+*   **Design Espaçoso**: Cartões otimizados e legíveis com resolução de 450x225px.
+*   **Resiliência a Falhas de Rede**: Função de fetch de avatares otimizada com validações de URL e timeout controlado (3 segundos) para evitar erros do tipo `fetch failed` caso o CDN do GitHub bloqueie ou limite conexões.
 *   **Temas**: Suporte para os temas `light`, `dark`, `dracula`, `nord`, `gruvbox` e `catppuccin` através do parâmetro `?theme=`.
 *   **Tratamento de Erros**: Usuários inválidos ou erros de API retornam um cartão de erro estilizado e amigável.
 *   **Segurança**: Comunicação autenticada com a API do GitHub sem expor tokens ou dados sensíveis.
