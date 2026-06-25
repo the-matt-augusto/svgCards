@@ -4,7 +4,7 @@
 Este projeto é um gerador dinâmico de cartões de perfil do GitHub que renderiza um arquivo SVG customizado contendo estatísticas públicas do usuário (nome, avatar, repositórios, seguidores, total de estrelas e as 3 linguagens de programação mais usadas). É ideal para embutir diretamente na seção de perfil ou em repositórios do seu GitHub.
 
 ## Sobre o Projeto
-O projeto foi desenvolvido como uma Vercel Serverless Function em TypeScript. O endpoint em `/api/card.ts` busca os dados diretamente da API GraphQL do GitHub, converte e embute a imagem do avatar em formato Base64 (Data URI) dentro do SVG usando `xlink:href` para garantir a compatibilidade com o proxy de imagem do GitHub (Camo), e aplica cache de resposta para otimizar as requisições.
+O projeto foi desenvolvido em TypeScript utilizando as **Vercel Edge Functions (Edge Runtime)** para máxima performance e baixa latência. O endpoint em `/api/card.ts` busca os dados diretamente da API GraphQL do GitHub, processa a imagem do avatar de forma eficiente usando APIs Web nativas (`Uint8Array` e `btoa` em substituição ao `Buffer`), embute o avatar em formato Base64 (Data URI) dentro do SVG usando `xlink:href` para garantir compatibilidade com o proxy de imagens do GitHub (Camo), e define os cabeçalhos de cache apropriados.
 
 Destaques:
 *   **Métricas do Perfil**: Exibe contagem de repositórios, seguidores, soma total de estrelas de seus repositórios e as 3 linguagens mais usadas (com círculos coloridos com a cor oficial de cada linguagem).
@@ -16,8 +16,7 @@ Destaques:
 
 ## Tecnologias Utilizadas
 *   [TypeScript](https://www.typescriptlang.org/)
-*   [Node.js](https://nodejs.org/)
-*   [Vercel Serverless Functions](https://vercel.com/docs/functions/serverless-functions)
+*   [Vercel Edge Functions (Edge Runtime)](https://vercel.com/docs/functions/edge-functions)
 *   [Vercel CLI](https://vercel.com/docs/cli)
 
 ## Como Rodar

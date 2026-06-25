@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+export const config = { runtime: 'edge' };
 
 interface ThemeConfig {
   bg: string;
@@ -39,9 +39,15 @@ async function fetchAvatarBase64(url: string): Promise<string> {
     const res = await fetch(url);
     if (!res.ok) return url;
     const arrayBuffer = await res.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const uint8 = new Uint8Array(arrayBuffer);
+    let binary = '';
+    const len = uint8.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(uint8[i]);
+    }
+    const base64 = btoa(binary);
     const contentType = res.headers.get('content-type') || 'image/jpeg';
-    return `data:${contentType};base64,${buffer.toString('base64')}`;
+    return `data:${contentType};base64,${base64}`;
   } catch {
     return url;
   }
@@ -85,17 +91,20 @@ function renderErrorCard(title: string, message: string, theme: ThemeConfig): st
 </svg>`;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=1800, stale-while-revalidate=86400');
+export default async function handler(req: Request): Promise<Response> {
+  const responseHeaders = new Headers({
+    'Content-Type': 'image/svg+xml; charset=utf-8',
+    'Cache-Control': 'public, max-age=1800, s-maxage=1800, stale-while-revalidate=86400',
+  });
 
-  const requested = String(req.query.theme ?? "dark").toLowerCase();
+  const url = new URL(req.url);
+  const requested = String(url.searchParams.get('theme') ?? "dark").toLowerCase();
   const theme = (requested in themes) ? themes[requested as keyof typeof themes] : themes.dark;
 
-  const username = req.query.username;
+  const username = url.searchParams.get('username');
 
-  if (!username || typeof username !== 'string') {
-    return res.status(200).send(renderErrorCard('Missing Username', 'Provide a ?username= parameter in the URL.', theme));
+  if (!username) {
+    return new Response(renderErrorCard('Missing Username', 'Provide a ?username= parameter in the URL.', theme), { headers: responseHeaders });
   }
 
   const token = process.env.GITHUB_TOKEN;
@@ -135,17 +144,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!response.ok) {
       const errText = await response.text();
-      return res.status(200).send(renderErrorCard('GitHub API Error', `Status ${response.status}: ${errText.slice(0, 50)}...`, theme));
+      return new Response(renderErrorCard('GitHub API Error', `Status ${response.status}: ${errText.slice(0, 50)}...`, theme), { headers: responseHeaders });
     }
 
     const json = await response.json() as any;
 
     if (json.errors || !json.data?.user) {
       if (!json.data?.user) {
-        return res.status(200).send(renderErrorCard('User Not Found', `GitHub user "${username}" does not exist.`, theme));
+        return new Response(renderErrorCard('User Not Found', `GitHub user "${username}" does not exist.`, theme), { headers: responseHeaders });
       }
       const errMsg = json.errors[0]?.message || 'GraphQL Error';
-      return res.status(200).send(renderErrorCard('GitHub API Error', errMsg, theme));
+      return new Response(renderErrorCard('GitHub API Error', errMsg, theme), { headers: responseHeaders });
     }
 
     const user = json.data.user;
@@ -208,9 +217,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   ${langsSvg}
 </svg>`;
 
-    return res.status(200).send(svg);
+    return new Response(svg, { headers: responseHeaders });
 
   } catch (error: any) {
-    return res.status(200).send(renderErrorCard('Exception Occurred', error?.message || 'Unknown network error.', theme));
+    return new Response(renderErrorCard('Exception Occurred', error?.message || 'Unknown network error.', theme), { headers: responseHeaders });
   }
 }
