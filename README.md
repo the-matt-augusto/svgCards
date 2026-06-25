@@ -1,12 +1,14 @@
 # SVG Cards - Gerador de Cartões GitHub
 
 ## Introdução
-Este projeto é um gerador dinâmico de cartões de perfil do GitHub que renderiza um arquivo SVG customizado contendo estatísticas públicas do usuário (nome, repositórios públicos, seguidores e avatar). É ideal para embutir diretamente na seção de perfil ou em repositórios do seu GitHub.
+Este projeto é um gerador dinâmico de cartões de perfil do GitHub que renderiza um arquivo SVG customizado contendo estatísticas públicas do usuário (nome, avatar, repositórios, seguidores, total de estrelas e as 3 linguagens de programação mais usadas). É ideal para embutir diretamente na seção de perfil ou em repositórios do seu GitHub.
 
 ## Sobre o Projeto
-O projeto foi desenvolvido como uma Vercel Serverless Function em TypeScript. O endpoint em `/api/card.ts` busca os dados diretamente da API do GitHub, converte e embute a imagem do avatar em formato Base64 (Data URI) dentro do SVG usando `xlink:href` para garantir a compatibilidade com o proxy de imagem do GitHub (Camo), e aplica cache de resposta para otimizar as requisições.
+O projeto foi desenvolvido como uma Vercel Serverless Function em TypeScript. O endpoint em `/api/card.ts` busca os dados diretamente da API GraphQL do GitHub, converte e embute a imagem do avatar em formato Base64 (Data URI) dentro do SVG usando `xlink:href` para garantir a compatibilidade com o proxy de imagem do GitHub (Camo), e aplica cache de resposta para otimizar as requisições.
 
 Destaques:
+*   **Métricas do Perfil**: Exibe contagem de repositórios, seguidores, soma total de estrelas de seus repositórios e as 3 linguagens mais usadas (com círculos coloridos com a cor oficial de cada linguagem).
+*   **Design Compacto**: Cartões otimizados e mais elegantes com resolução de 450x150px.
 *   **Temas**: Suporte para os temas `light`, `dark`, `dracula`, `nord`, `gruvbox` e `catppuccin` através do parâmetro `?theme=`.
 *   **Tratamento de Erros**: Usuários inválidos ou erros de API retornam um cartão de erro estilizado e amigável.
 *   **Segurança**: Comunicação autenticada com a API do GitHub sem expor tokens ou dados sensíveis.
