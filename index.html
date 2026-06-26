@@ -1010,7 +1010,7 @@
   <div class="toast" id="toast">Copiado com sucesso!</div>
 
   <script>
-    // Paletas dos Temas (conforme api/card.ts)
+    // Paletas dos Temas (conforme api/github.ts)
     const themes = {
       light:      { label: "Light",      bg: "#ffffff", border: "#d0d7de", text: "#1f2328", subtext: "#656d76", accent: "#0969da" },
       dark:       { label: "Dark",       bg: "#0d1117", border: "#30363d", text: "#e6edf3", subtext: "#8b949e", accent: "#58a6ff" },
@@ -1135,7 +1135,7 @@
       const host = window.location.origin;
       let urlStr = '';
       if (selectedCardType === 'github') {
-        urlStr = `${host}/api/card?username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+        urlStr = `${host}/api/github?username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
       } else {
         urlStr = `${host}/api/stackoverflow?id=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
       }
