@@ -1,5 +1,20 @@
 import { Provider, CardData, ProviderError, formatNumber, fetchWithTimeout } from '../core';
 
+interface StackOverflowApiResponse {
+  error_id?: number;
+  error_message?: string;
+  items?: Array<{
+    display_name: string;
+    reputation: number;
+    badge_counts: { gold: number; silver: number; bronze: number };
+    creation_date: number;
+    profile_image: string;
+    reputation_change_year: number;
+    reputation_change_quarter: number;
+    reputation_change_month: number;
+  }>;
+}
+
 function formatRepChange(change: number): string {
   if (change >= 0) {
     return `+${formatNumber(change)}`;
@@ -8,11 +23,11 @@ function formatRepChange(change: number): string {
 }
 
 export class StackOverflowProvider implements Provider {
-  async fetch(id: string): Promise<CardData | null> {
+  async fetch(id: string): Promise<CardData> {
     const stackappsKey = process.env.STACKAPPS_KEY;
     let apiUrl = `https://api.stackexchange.com/2.3/users/${id}?site=stackoverflow`;
     if (stackappsKey) {
-      apiUrl += `&key=${stackappsKey}`;
+      apiUrl += `&key=${encodeURIComponent(stackappsKey)}`;
     }
 
     let response: Response;
@@ -23,11 +38,12 @@ export class StackOverflowProvider implements Provider {
           'Accept': 'application/json',
         }
       });
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
         throw new ProviderError('unavailable', 'Serviço Indisponível', 'A solicitação ao Stack Overflow expirou (timeout).');
       }
-      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar o Stack Overflow: ${err.message}`);
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar o Stack Overflow: ${msg}`);
     }
 
     if (!response.ok) {
@@ -38,23 +54,23 @@ export class StackOverflowProvider implements Provider {
       if (response.status >= 500) {
         throw new ProviderError('unavailable', 'Serviço Indisponível', `Stack Overflow indisponível (Status ${response.status}).`);
       }
-      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro na API do Stack Overflow (Status ${response.status}): ${errText.slice(0, 50)}...`);
+      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro na API do Stack Overflow (Status ${response.status}): ${errText.length > 50 ? errText.slice(0, 50) + '...' : errText}`);
     }
 
-    const json = await response.json() as any;
+    const json = await response.json() as StackOverflowApiResponse;
 
     validateStackOverflowResponse(json, id);
 
-    const user = json.items[0];
+    const user = json.items![0];
     const displayName = user.display_name;
-    const reputation = user.reputation || 0;
-    const badgeCounts = user.badge_counts || { gold: 0, silver: 0, bronze: 0 };
-    const creationDate = user.creation_date; // Epoch timestamp seconds
+    const reputation = user.reputation;
+    const badgeCounts = user.badge_counts;
+    const creationDate = user.creation_date;
     const profileImage = user.profile_image;
 
-    const repChangeYear = user.reputation_change_year || 0;
-    const repChangeQuarter = user.reputation_change_quarter || 0;
-    const repChangeMonth = user.reputation_change_month || 0;
+    const repChangeYear = user.reputation_change_year;
+    const repChangeQuarter = user.reputation_change_quarter;
+    const repChangeMonth = user.reputation_change_month;
 
     const memberSince = creationDate ? new Date(creationDate * 1000).getUTCFullYear() : new Date().getUTCFullYear();
 
@@ -79,15 +95,16 @@ export class StackOverflowProvider implements Provider {
   }
 }
 
-export function validateStackOverflowResponse(json: any, id: string): void {
-  if (json && json.error_id) {
-    const errMsg = json.error_message || 'Stack Exchange Error';
-    if (json.error_id === 502 || json.error_id === 403 || errMsg.toLowerCase().includes('throttle') || errMsg.toLowerCase().includes('rate limit')) {
+export function validateStackOverflowResponse(json: unknown, id: string): void {
+  const r = json as { error_id?: number; error_message?: string; items?: unknown[] };
+  if (r?.error_id) {
+    const errMsg = r.error_message || 'Stack Exchange Error';
+    if (r.error_id === 502 || r.error_id === 403 || errMsg.toLowerCase().includes('throttle') || errMsg.toLowerCase().includes('rate limit')) {
       throw new ProviderError('rate_limited', 'Stack Exchange API Error', errMsg);
     }
     throw new ProviderError('unavailable', 'Stack Exchange API Error', errMsg);
   }
-  if (!json || !json.items || json.items.length === 0) {
+  if (!r?.items || r.items.length === 0) {
     throw new ProviderError('not_found', 'User Not Found', `Stack Overflow user ID "${id}" does not exist.`);
   }
 }

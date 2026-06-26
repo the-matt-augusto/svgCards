@@ -1,7 +1,38 @@
 import { Provider, CardData, ProviderError, formatNumber, fetchWithTimeout } from '../core';
 
+interface GitHubGraphQLResponse {
+  errors?: Array<{ message: string }>;
+  data?: {
+    user: {
+      name: string | null;
+      login: string;
+      avatarUrl: string;
+      createdAt: string;
+      followers: { totalCount: number };
+      repositories: {
+        totalCount: number;
+        nodes: Array<{
+          stargazerCount: number;
+          primaryLanguage: { name: string; color: string | null } | null;
+        }>;
+      };
+      contributionsCollection: {
+        totalCommitContributions: number;
+        totalPullRequestContributions: number;
+        totalIssueContributions: number;
+        contributionCalendar: {
+          totalContributions: number;
+          weeks: Array<{
+            contributionDays: Array<{ date: string; contributionCount: number }>;
+          }>;
+        };
+      };
+    } | null;
+  };
+}
+
 export class GitHubProvider implements Provider {
-  async fetch(id: string): Promise<CardData | null> {
+  async fetch(id: string): Promise<CardData> {
     const token = process.env.GITHUB_TOKEN;
     const headers: Record<string, string> = {
       'User-Agent': 'Vercel-GitHub-Card',
@@ -52,32 +83,33 @@ export class GitHubProvider implements Provider {
         headers,
         body: JSON.stringify({ query, variables: { login: id } }),
       });
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
         throw new ProviderError('unavailable', 'Serviço Indisponível', 'A solicitação ao GitHub expirou (timeout).');
       }
-      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar o GitHub: ${err.message}`);
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar o GitHub: ${msg}`);
     }
 
     if (!response.ok) {
       const errText = await response.text();
-      if (response.status === 429) {
+      if (response.status === 429 || (response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0')) {
         throw new ProviderError('rate_limited', 'Limite Atingido', 'Limite de requisições à API do GitHub atingido.');
       }
       if (response.status >= 500) {
         throw new ProviderError('unavailable', 'Serviço Indisponível', `GitHub indisponível (Status ${response.status}).`);
       }
-      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro na API do GitHub (Status ${response.status}): ${errText.slice(0, 50)}...`);
+      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro na API do GitHub (Status ${response.status}): ${errText.length > 50 ? errText.slice(0, 50) + '...' : errText}`);
     }
 
-    const json = await response.json() as any;
+    const json = await response.json() as GitHubGraphQLResponse;
 
     validateGitHubResponse(json, id);
 
-    const user = json.data.user;
+    const user = json.data!.user!;
 
     // Calcular total de estrelas e top linguagens
-    const totalStars = user.repositories.nodes.reduce((s: number, r: any) => s + r.stargazerCount, 0);
+    const totalStars = user.repositories.nodes.reduce((s, r) => s + r.stargazerCount, 0);
 
     const langMap: Record<string, { count: number, color: string }> = {};
     for (const repo of user.repositories.nodes) {
@@ -97,15 +129,15 @@ export class GitHubProvider implements Provider {
 
     // Calcular ano de criação e informações de contribuição
     const memberSince = new Date(user.createdAt).getUTCFullYear();
-    const contributions = user.contributionsCollection || {};
-    const commits = contributions.totalCommitContributions || 0;
-    const prs = contributions.totalPullRequestContributions || 0;
-    const issues = contributions.totalIssueContributions || 0;
-    const totalContributions = contributions.contributionCalendar?.totalContributions || 0;
+    const contributions = user.contributionsCollection;
+    const commits = contributions.totalCommitContributions;
+    const prs = contributions.totalPullRequestContributions;
+    const issues = contributions.totalIssueContributions;
+    const totalContributions = contributions.contributionCalendar.totalContributions;
 
     // Calcular a sequência atual (streak) percorrendo os dias de trás pra frente
-    const weeks = contributions.contributionCalendar?.weeks || [];
-    const days = weeks.flatMap((w: any) => w?.contributionDays || []);
+    const weeks = contributions.contributionCalendar.weeks;
+    const days = weeks.flatMap((w) => w.contributionDays);
 
     const streak = calculateStreak(days);
 
@@ -130,16 +162,21 @@ export class GitHubProvider implements Provider {
   }
 }
 
-export function validateGitHubResponse(json: any, id: string): void {
-  if (!json || json.errors || !json.data?.user) {
-    if (!json || !json.data?.user) {
-      throw new ProviderError('not_found', 'User Not Found', `GitHub user "${id}" does not exist.`);
-    }
-    const errMsg = json.errors[0]?.message || 'GraphQL Error';
+export function validateGitHubResponse(json: unknown, id: string): void {
+  const r = json as { errors?: Array<{ message: string }>; data?: { user: object | null } | null };
+  if (r?.errors?.length) {
+    const errMsg = r.errors[0].message || 'GraphQL Error';
     if (errMsg.toLowerCase().includes('rate limit') || errMsg.toLowerCase().includes('secondary rate')) {
-      throw new ProviderError('rate_limited', 'GitHub API Error', errMsg);
+      throw new ProviderError('rate_limited', 'Limite Atingido', errMsg);
     }
-    throw new ProviderError('unavailable', 'GitHub API Error', errMsg);
+    // Usuário inexistente vem como 200 com errors NOT_FOUND + data.user null;
+    // detecta o "não encontrado" pelo corpo antes de tratar como indisponível.
+    if (r.data?.user) {
+      throw new ProviderError('unavailable', 'GitHub API Error', errMsg);
+    }
+  }
+  if (!r?.data?.user) {
+    throw new ProviderError('not_found', 'User Not Found', `GitHub user "${id}" does not exist.`);
   }
 }
 
