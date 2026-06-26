@@ -844,6 +844,7 @@
         <div class="card-type-container">
           <button type="button" class="btn-type active" id="btnTypeGithub">GitHub</button>
           <button type="button" class="btn-type" id="btnTypeStackoverflow">Stack Overflow</button>
+          <button type="button" class="btn-type" id="btnTypeTwitch">Twitch</button>
         </div>
 
         <div class="form-group">
@@ -860,6 +861,12 @@
               <svg viewBox="0 0 24 24">
                 <path d="M18.986 20.892H1.996v-7.1h1.998v5.1h12.994v-5.1h1.998v7.1z" fill="currentColor" />
                 <path d="M5.995 14.896h8.995v1.998H5.995v-1.998zm.36-3.817l8.83 1.705.38-1.96-8.83-1.706-.38 1.961zm1.266-3.64l8.307 3.327.75-1.854-8.307-3.327-.75 1.853zm2.52-3.136l7.1 5.378 1.2-1.59-7.1-5.378-1.2 1.59zm3.996-2.303l5.378 7.1 1.59-1.2-5.378-7.1-1.59 1.2z" fill="#f48225" />
+              </svg>
+            </div>
+            <div class="input-icon" id="inputIconTwitch" style="display: none;">
+              <!-- Ícone Twitch -->
+              <svg viewBox="0 0 24 24" style="color: #9146ff;">
+                <path d="M11.571 4.714h1.715v5.143H11.57v-5.143zm4.715 0H18v5.143h-1.714v-5.143zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0H6zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714v9.429z" fill="currentColor" />
               </svg>
             </div>
             <input type="text" id="username" placeholder="Digite seu username (ex: octocat)" autocomplete="off">
@@ -1021,11 +1028,12 @@
       spotify:    { label: "Spotify",    bg: "#191414", border: "#282828", text: "#ffffff", subtext: "#b3b3b3", accent: "#1db954" },
       youtube:    { label: "YouTube",    bg: "#0f0f0f", border: "#282828", text: "#ffffff", subtext: "#aaaaaa", accent: "#ff0000" },
       cyberpunk:  { label: "Cyberpunk",  bg: "#0c0813", border: "#ff0055", text: "#ffe600", subtext: "#9d7cd8", accent: "#00f0ff" },
+      twitch:     { label: "Twitch",     bg: "#0d0c0f", border: "#9146ff", text: "#f5f5f7", subtext: "#adadb8", accent: "#9146ff" },
     };
 
     let selectedTheme = 'dark';
     let debounceTimer;
-    let selectedCardType = 'github'; // 'github' or 'stackoverflow'
+    let selectedCardType = 'github'; // 'github', 'stackoverflow' or 'twitch'
 
     // Elementos DOM
     const usernameInput = document.getElementById('username');
@@ -1136,8 +1144,10 @@
       let urlStr = '';
       if (selectedCardType === 'github') {
         urlStr = `${host}/api/github?username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
-      } else {
+      } else if (selectedCardType === 'stackoverflow') {
         urlStr = `${host}/api/stackoverflow?id=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+      } else {
+        urlStr = `${host}/api/twitch?channel=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
       }
       
       // Apenas adiciona cores customizadas se o toggle estiver ativo
@@ -1164,13 +1174,20 @@
     function getProfileUrl(username) {
       if (selectedCardType === 'github') {
         return `https://github.com/${encodeURIComponent(username)}`;
-      } else {
+      } else if (selectedCardType === 'stackoverflow') {
         return `https://stackoverflow.com/users/${encodeURIComponent(username)}`;
+      } else {
+        return `https://twitch.tv/${encodeURIComponent(username)}`;
       }
     }
 
     function updateSnippets(username) {
-      const cardTypeLabel = selectedCardType === 'github' ? 'GitHub Card' : 'Stack Overflow Card';
+      let cardTypeLabel = 'GitHub Card';
+      if (selectedCardType === 'stackoverflow') {
+        cardTypeLabel = 'Stack Overflow Card';
+      } else if (selectedCardType === 'twitch') {
+        cardTypeLabel = 'Twitch Status Card';
+      }
       if (!username) {
         markdownCode.textContent = `[![${cardTypeLabel}](...)...`;
         htmlCode.textContent = '<a href="..."...';
@@ -1268,9 +1285,11 @@
     // Event Listeners
     const btnTypeGithub = document.getElementById('btnTypeGithub');
     const btnTypeStackoverflow = document.getElementById('btnTypeStackoverflow');
+    const btnTypeTwitch = document.getElementById('btnTypeTwitch');
     const inputLabel = document.getElementById('inputLabel');
     const inputIconGithub = document.getElementById('inputIconGithub');
     const inputIconStackoverflow = document.getElementById('inputIconStackoverflow');
+    const inputIconTwitch = document.getElementById('inputIconTwitch');
     const subtitleText = document.getElementById('subtitleText');
     const placeholderText = placeholder.querySelector('.placeholder-text');
 
@@ -1279,11 +1298,13 @@
       selectedCardType = 'github';
       btnTypeGithub.classList.add('active');
       btnTypeStackoverflow.classList.remove('active');
+      btnTypeTwitch.classList.remove('active');
       
       inputLabel.textContent = 'Usuário do GitHub';
       usernameInput.placeholder = 'Digite seu username (ex: octocat)';
       inputIconGithub.style.display = 'flex';
       inputIconStackoverflow.style.display = 'none';
+      inputIconTwitch.style.display = 'none';
       subtitleText.textContent = 'Gere cartões dinâmicos e elegantes das suas estatísticas do GitHub';
       placeholderText.textContent = 'Digite um username para carregar o preview.';
       previewImg.alt = 'GitHub Profile Card';
@@ -1297,14 +1318,36 @@
       selectedCardType = 'stackoverflow';
       btnTypeStackoverflow.classList.add('active');
       btnTypeGithub.classList.remove('active');
+      btnTypeTwitch.classList.remove('active');
       
       inputLabel.textContent = 'User ID do Stack Overflow';
       usernameInput.placeholder = 'Digite seu ID numérico (ex: 1)';
       inputIconGithub.style.display = 'none';
       inputIconStackoverflow.style.display = 'flex';
+      inputIconTwitch.style.display = 'none';
       subtitleText.textContent = 'Gere cartões dinâmicos e elegantes da sua reputação do Stack Overflow';
       placeholderText.textContent = 'Digite um ID numérico para carregar o preview.';
       previewImg.alt = 'Stack Overflow Profile Card';
+      
+      usernameInput.value = ''; // Limpa o input ao alternar
+      updatePreview();
+    });
+
+    btnTypeTwitch.addEventListener('click', () => {
+      if (selectedCardType === 'twitch') return;
+      selectedCardType = 'twitch';
+      btnTypeTwitch.classList.add('active');
+      btnTypeGithub.classList.remove('active');
+      btnTypeStackoverflow.classList.remove('active');
+      
+      inputLabel.textContent = 'Canal da Twitch';
+      usernameInput.placeholder = 'Digite o nome do canal (ex: jerma985)';
+      inputIconGithub.style.display = 'none';
+      inputIconStackoverflow.style.display = 'none';
+      inputIconTwitch.style.display = 'flex';
+      subtitleText.textContent = 'Gere cartões dinâmicos e elegantes do status da sua stream na Twitch';
+      placeholderText.textContent = 'Digite o nome do canal para carregar o preview.';
+      previewImg.alt = 'Twitch Status Card';
       
       usernameInput.value = ''; // Limpa o input ao alternar
       updatePreview();
