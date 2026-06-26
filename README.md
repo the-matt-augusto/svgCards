@@ -59,7 +59,7 @@ Certifique-se de ter o Node.js e a Vercel CLI instalados em sua máquina.
 ## Como Usar
 
 ### 1. Cartão do GitHub
-Faça uma requisição ao endpoint `/api/card` passando o parâmetro `username` (obrigatório) e o parâmetro `theme` (opcional).
+Faça uma requisição ao endpoint `/api/github` passando o parâmetro `username` (obrigatório) e o parâmetro `theme` (opcional).
 
 | Parâmetro | Tipo | Descrição | Valores Aceitos | Padrão |
 | :--- | :--- | :--- | :--- | :--- |
@@ -78,7 +78,7 @@ Faça uma requisição ao endpoint `/api/stackoverflow` passando o parâmetro `i
 
 #### GitHub
 ```markdown
-[![GitHub Card](https://svg-cards-five.vercel.app/api/card?username=the-matt-augusto&theme=dracula)](https://github.com/the-matt-augusto)
+[![GitHub Card](https://svg-cards-five.vercel.app/api/github?username=the-matt-augusto&theme=dracula)](https://github.com/the-matt-augusto)
 ```
 
 #### Stack Overflow
