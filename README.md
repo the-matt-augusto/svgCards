@@ -9,6 +9,7 @@ O projeto foi desenvolvido em TypeScript utilizando as **Vercel Edge Functions (
 Destaques:
 *   **Métricas do Perfil GitHub**: Exibe contagem de repositórios, seguidores, soma total de estrelas de seus repositórios e as 3 linguagens mais usadas (com círculos coloridos com a cor oficial de cada linguagem).
 *   **Métricas do Perfil Stack Overflow (Novo!)**: Exibe a reputação total e o histórico de conquistas de medalhas (Ouro, Prata, Bronze), além de métricas de evolução da reputação (Ano, Trimestre, Mês).
+*   **Métricas de Status da Twitch (Novo!)**: Exibe o status da stream em tempo real (Ao Vivo vs Offline). Se estiver ao vivo, mostra o título da transmissão, jogo/categoria e quantidade de espectadores. Exibe também o número de seguidores do canal e o avatar base64.
 *   **Métricas de Atividade GitHub**: Exibe em um bloco dedicado a sequência atual de dias ativos (streak 🔥), total de contribuições no ano, linha detalhada de commits/PRs/issues, e o ano de criação da conta ("Membro desde YYYY").
 *   **Sequência Resiliente**: A sequência atual (streak) é computada percorrendo os dias de trás para frente. Caso o dia de hoje ainda não tenha contribuições (esteja zerado), o streak não é resetado para 0, continuando a contagem a partir de ontem.
 *   **Formatação Inteligente**: Valores numéricos grandes (seguidores, estrelas, reputação, commits, etc.) são convertidos para notação compacta (ex: `1.2k` ou `2.5M`), garantindo que o layout nunca sofra sobreposição de textos.
@@ -44,10 +45,12 @@ Certifique-se de ter o Node.js e a Vercel CLI instalados em sua máquina.
     ```
 
 3.  Configure o arquivo de variáveis de ambiente:
-    Crie um arquivo `.env` na raiz do projeto com o seu token de acesso pessoal do GitHub (Personal Access Token) e sua chave da StackApps (opcional para aumentar a cota de requisições):
+    Crie um arquivo `.env` na raiz do projeto com o seu token de acesso pessoal do GitHub (Personal Access Token), sua chave da StackApps (opcional) e suas credenciais de desenvolvedor da Twitch:
     ```env
     GITHUB_TOKEN=seu_token_aqui
     STACKAPPS_KEY=sua_chave_aqui
+    TWITCH_CLIENT_ID=seu_client_id_aqui
+    TWITCH_CLIENT_SECRET=seu_client_secret_aqui
     ```
 
 4.  Inicie a Vercel em modo de desenvolvimento local:
@@ -74,6 +77,14 @@ Faça uma requisição ao endpoint `/api/stackoverflow` passando o parâmetro `i
 | `id` | String | ID numérico do perfil do Stack Overflow. | Qualquer ID de usuário ativo. | (Obrigatório) |
 | `theme` | String | Paleta de cores do cartão. | `light`, `dark`, `dracula`, `nord`, `gruvbox`, `catppuccin` | `dark` |
 
+### 3. Cartão do Twitch (Novo!)
+Faça uma requisição ao endpoint `/api/twitch` passando o parâmetro `channel` (login do canal, obrigatório) e o parâmetro `theme` (opcional).
+
+| Parâmetro | Tipo | Descrição | Valores Aceitos | Padrão |
+| :--- | :--- | :--- | :--- | :--- |
+| `channel` | String | Nome de usuário/login do canal da Twitch. | Qualquer canal ativo. | (Obrigatório) |
+| `theme` | String | Paleta de cores do cartão. | `light`, `dark`, `dracula`, `nord`, `gruvbox`, `catppuccin`, `twitch` | `dark` |
+
 ### Exemplo de Uso em Markdown
 
 #### GitHub
@@ -84,6 +95,11 @@ Faça uma requisição ao endpoint `/api/stackoverflow` passando o parâmetro `i
 #### Stack Overflow
 ```markdown
 [![Stack Overflow Card](https://svg-cards-five.vercel.app/api/stackoverflow?id=1&theme=dracula)](https://stackoverflow.com/users/1)
+```
+
+#### Twitch
+```markdown
+[![Twitch Card](https://svg-cards-five.vercel.app/api/twitch?channel=jerma985&theme=twitch)](https://twitch.tv/jerma985)
 ```
 
 ## Licença
