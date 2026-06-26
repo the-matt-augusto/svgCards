@@ -60,7 +60,7 @@ export interface TwitchCardData extends BaseCardData {
 export type CardData = GitHubCardData | StackOverflowCardData | TwitchCardData;
 
 export interface Provider {
-  fetch(id: string): Promise<CardData | null>;
+  fetch(id: string): Promise<CardData>;
 }
 
 export class ProviderError extends Error {
@@ -90,11 +90,13 @@ export function escapeXml(str: string | null | undefined): string {
 }
 
 export function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  const abs = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+  if (abs >= 1000000) {
+    return sign + (abs / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  if (abs >= 1000) {
+    return sign + (abs / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
   }
   return String(num);
 }
@@ -116,10 +118,10 @@ export async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestI
 }
 
 export async function fetchAvatarBase64(url: string, provider: string): Promise<string> {
-  if (!url || !url.startsWith('http')) return url;
+  if (!url || !url.startsWith('https://')) return '';
   try {
     const res = await fetchWithTimeout(url, {}, 5000);
-    if (!res.ok) return url;
+    if (!res.ok) return '';
     const arrayBuffer = await res.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
     let binary = '';
@@ -134,7 +136,7 @@ export async function fetchAvatarBase64(url: string, provider: string): Promise<
     const contentType = res.headers.get('content-type') || defaultContentType;
     return `data:${contentType};base64,${base64}`;
   } catch {
-    return url;
+    return '';
   }
 }
 
@@ -178,6 +180,11 @@ export function renderErrorCard(title: string, message: string, theme: ThemeConf
 
 export function renderSvg(data: CardData, theme: ThemeConfig): string {
   const cleanAvatarUrl = escapeXml(data.avatarUrl);
+  const avatarInitial = escapeXml(([...(data.name || data.login || '?')][0] ?? '?').toUpperCase());
+  const avatarElement = cleanAvatarUrl
+    ? `<image xlink:href="${cleanAvatarUrl}" x="30" y="25" width="80" height="80" clip-path="url(#avatar-clip)" />`
+    : `<text x="70" y="65" dy="0.35em" font-family="${fonts}" font-size="36" font-weight="bold" fill="${theme.accent}" text-anchor="middle">${avatarInitial}</text>`;
+  const avatarCircleFill = cleanAvatarUrl ? 'none' : theme.border;
 
   if (data.provider === 'github') {
     const cleanName = escapeXml(data.name);
@@ -197,8 +204,9 @@ export function renderSvg(data: CardData, theme: ThemeConfig): string {
       const cx = 30 + i * 130;
       const tx = cx + 10;
       const escapedLangName = escapeXml(lang.name);
+      const safeLangColor = safeHex((lang.color ?? '').replace(/^#/, '')) ? lang.color : '#8b949e';
       langsSvg += `
-  <circle cx="${cx}" cy="202" r="4.5" fill="${lang.color}" />
+  <circle cx="${cx}" cy="202" r="4.5" fill="${safeLangColor}" />
   <text x="${tx}" y="206" font-family="${fonts}" font-size="12" fill="${theme.subtext}">${escapedLangName}</text>`;
     });
 
@@ -210,9 +218,9 @@ export function renderSvg(data: CardData, theme: ThemeConfig): string {
   </defs>
   <rect width="100%" height="100%" rx="16" fill="${theme.bg}" stroke="${theme.border}" stroke-width="1.5"/>
   
-  <circle cx="70" cy="65" r="41" fill="none" stroke="${theme.accent}" stroke-width="2" />
-  <image xlink:href="${cleanAvatarUrl}" x="30" y="25" width="80" height="80" clip-path="url(#avatar-clip)" />
-  
+  <circle cx="70" cy="65" r="41" fill="${avatarCircleFill}" stroke="${theme.accent}" stroke-width="2" />
+  ${avatarElement}
+
   <text x="135" y="40" font-family="${fonts}" font-size="20" font-weight="bold" fill="${theme.text}">${cleanName}</text>
   <text x="135" y="60" font-family="${fonts}" font-size="14" fill="${theme.subtext}">@${cleanLogin}</text>
   <text x="135" y="78" font-family="${fonts}" font-size="12" fill="${theme.subtext}">Membro desde ${memberSince}</text>
@@ -258,9 +266,9 @@ export function renderSvg(data: CardData, theme: ThemeConfig): string {
   </defs>
   <rect width="100%" height="100%" rx="16" fill="${theme.bg}" stroke="${theme.border}" stroke-width="1.5"/>
   
-  <circle cx="70" cy="65" r="41" fill="none" stroke="${theme.accent}" stroke-width="2" />
-  <image xlink:href="${cleanAvatarUrl}" x="30" y="25" width="80" height="80" clip-path="url(#avatar-clip)" />
-  
+  <circle cx="70" cy="65" r="41" fill="${avatarCircleFill}" stroke="${theme.accent}" stroke-width="2" />
+  ${avatarElement}
+
   <text x="135" y="40" font-family="${fonts}" font-size="20" font-weight="bold" fill="${theme.text}">${cleanDisplayName}</text>
   <text x="135" y="60" font-family="${fonts}" font-size="14" fill="${theme.subtext}">Stack Overflow ID: ${cleanId}</text>
   <text x="135" y="78" font-family="${fonts}" font-size="12" fill="${theme.subtext}">Membro desde ${memberSinceYear}</text>
@@ -309,6 +317,9 @@ export function renderSvg(data: CardData, theme: ThemeConfig): string {
     const cleanDisplayName = escapeXml(data.name);
     const cleanLogin = escapeXml(data.login);
     const cleanFollowers = escapeXml(data.stats.find(s => s.label === 'Seguidores')?.value || '0');
+    const offlineAvatarElement = cleanAvatarUrl
+      ? `<image xlink:href="${cleanAvatarUrl}" x="30" y="25" width="80" height="80" clip-path="url(#avatar-clip)" opacity="0.6" />`
+      : `<text x="70" y="65" dy="0.35em" font-family="${fonts}" font-size="36" font-weight="bold" fill="${theme.subtext}" text-anchor="middle">${avatarInitial}</text>`;
 
     if (data.isLive) {
       const cleanViewers = escapeXml(data.stats.find(s => s.label === 'Viewers')?.value || '0');
@@ -327,9 +338,9 @@ export function renderSvg(data: CardData, theme: ThemeConfig): string {
   </defs>
   <rect width="100%" height="100%" rx="16" fill="${theme.bg}" stroke="${theme.border}" stroke-width="1.5"/>
   
-  <circle cx="70" cy="65" r="41" fill="none" stroke="${theme.accent}" stroke-width="2" />
-  <image xlink:href="${cleanAvatarUrl}" x="30" y="25" width="80" height="80" clip-path="url(#avatar-clip)" />
-  
+  <circle cx="70" cy="65" r="41" fill="${avatarCircleFill}" stroke="${theme.accent}" stroke-width="2" />
+  ${avatarElement}
+
   <text x="135" y="45" font-family="${fonts}" font-size="20" font-weight="bold" fill="${theme.text}">${cleanDisplayName}</text>
   <text x="135" y="66" font-family="${fonts}" font-size="14" fill="${theme.subtext}">@${cleanLogin} • ${cleanFollowers} seguidores</text>
   
@@ -366,8 +377,8 @@ export function renderSvg(data: CardData, theme: ThemeConfig): string {
   </defs>
   <rect width="100%" height="100%" rx="16" fill="${theme.bg}" stroke="${theme.border}" stroke-width="1.5"/>
   
-  <circle cx="70" cy="65" r="41" fill="none" stroke="${theme.border}" stroke-width="2" />
-  <image xlink:href="${cleanAvatarUrl}" x="30" y="25" width="80" height="80" clip-path="url(#avatar-clip)" opacity="0.6" />
+  <circle cx="70" cy="65" r="41" fill="${avatarCircleFill}" stroke="${theme.border}" stroke-width="2" />
+  ${offlineAvatarElement}
   
   <text x="135" y="45" font-family="${fonts}" font-size="20" font-weight="bold" fill="${theme.text}">${cleanDisplayName}</text>
   <text x="135" y="66" font-family="${fonts}" font-size="14" fill="${theme.subtext}">@${cleanLogin} • ${cleanFollowers} seguidores</text>
@@ -435,13 +446,10 @@ export async function handleRequest(req: Request, defaultProvider?: string): Pro
   try {
     // 4. Resolve ID parameter name based on provider
     let idParam = 'username';
-    let idLabel = 'Username';
     if (providerName === 'stackoverflow') {
       idParam = 'id';
-      idLabel = 'User ID';
     } else if (providerName === 'twitch') {
       idParam = 'channel';
-      idLabel = 'Channel';
     }
 
     const id = url.searchParams.get(idParam);
@@ -476,9 +484,6 @@ export async function handleRequest(req: Request, defaultProvider?: string): Pro
 
     // 6. Fetch and normalize data
     const data = await provider.fetch(id);
-    if (!data) {
-      return new Response(renderErrorCard('Não Encontrado', 'O provider não retornou dados para o ID solicitado.', theme), { status: 404, headers: errorHeaders });
-    }
 
     // 7. Base64 encode the avatar url
     data.avatarUrl = await fetchAvatarBase64(data.avatarUrl, providerName);
@@ -487,18 +492,19 @@ export async function handleRequest(req: Request, defaultProvider?: string): Pro
     const svg = renderSvg(data, theme);
     return new Response(svg, { headers: responseHeaders });
 
-  } catch (error: any) {
+  } catch (error) {
     let category: 'not_found' | 'unavailable' | 'rate_limited' = 'unavailable';
-    let message = error?.message || 'Unknown network error.';
-    
+    let message = 'Erro de rede ou serviço indisponível.';
+
     if (error instanceof ProviderError) {
       category = error.category;
-    } else if (error.name === 'AbortError' || error.name === 'TimeoutError' || error.message?.includes('timeout') || error.message?.includes('abort')) {
-      category = 'unavailable';
-      message = 'A solicitação para a API externa expirou (timeout).';
-    } else {
-      category = 'unavailable';
-      message = error?.message || 'Erro de rede ou serviço indisponível.';
+      message = error.message;
+    } else if (error instanceof Error) {
+      if (error.name === 'AbortError' || error.name === 'TimeoutError' || error.message.includes('timeout') || error.message.includes('abort')) {
+        message = 'A solicitação para a API externa expirou (timeout).';
+      } else {
+        message = error.message;
+      }
     }
 
     const titleMap = {
@@ -514,7 +520,7 @@ export async function handleRequest(req: Request, defaultProvider?: string): Pro
       rate_limited: 429,
       unavailable: 503
     };
-    const responseStatus = statusMap[category] || 500;
+    const responseStatus = statusMap[category];
 
     return new Response(renderErrorCard(title, message, theme), { 
       status: responseStatus,

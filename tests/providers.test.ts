@@ -53,13 +53,30 @@ describe('GitHub Provider - validateGitHubResponse', () => {
     );
   });
 
-  it('should throw "GitHub API Error" when GraphQL errors are present', () => {
+  it('should throw not_found (not unavailable) for the real GitHub shape: errors NOT_FOUND + data.user null', () => {
+    const json = {
+      data: { user: null },
+      errors: [{ type: 'NOT_FOUND', message: "Could not resolve to a User with the login of 'invalid-user'." }],
+    };
+    expect(() => validateGitHubResponse(json, 'invalid-user')).toThrowError(
+      new ProviderError('not_found', 'User Not Found', 'GitHub user "invalid-user" does not exist.')
+    );
+  });
+
+  it('should throw rate_limited when GraphQL errors contain rate limit message', () => {
     const json = {
       errors: [{ message: 'Rate limit exceeded' }],
       data: { user: { login: 'octocat' } }
     };
     expect(() => validateGitHubResponse(json, 'octocat')).toThrowError(
-      new ProviderError('rate_limited', 'GitHub API Error', 'Rate limit exceeded')
+      new ProviderError('rate_limited', 'Limite Atingido', 'Rate limit exceeded')
+    );
+  });
+
+  it('should throw rate_limited (not not_found) when rate-limit error has no data field', () => {
+    const json = { errors: [{ message: 'API rate limit exceeded for this resource.' }] };
+    expect(() => validateGitHubResponse(json, 'octocat')).toThrowError(
+      new ProviderError('rate_limited', 'Limite Atingido', 'API rate limit exceeded for this resource.')
     );
   });
 });

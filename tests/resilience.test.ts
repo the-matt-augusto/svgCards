@@ -123,4 +123,30 @@ describe('handleRequest - error caching and status codes', () => {
     expect(svg).toContain('expirou');
     expect(svg).toContain('timeout');
   });
+
+  it('should return valid SVG and no-store cache when fetch rejects with null', async () => {
+    vi.mocked(fetch).mockRejectedValue(null);
+
+    const req = new Request('https://example.com/api?provider=github&username=octocat');
+    const res = await handleRequest(req);
+
+    expect(res.status).toBe(503);
+    expect(res.headers.get('Cache-Control')).toContain('no-store');
+    const svg = await res.text();
+    expect(svg).toContain('<svg');
+    expect(svg).toContain('Serviço Indisponível');
+  });
+
+  it('should return valid SVG and no-store cache when fetch rejects with a plain string', async () => {
+    vi.mocked(fetch).mockRejectedValue('network failure');
+
+    const req = new Request('https://example.com/api?provider=github&username=octocat');
+    const res = await handleRequest(req);
+
+    expect(res.status).toBe(503);
+    expect(res.headers.get('Cache-Control')).toContain('no-store');
+    const svg = await res.text();
+    expect(svg).toContain('<svg');
+    expect(svg).toContain('Serviço Indisponível');
+  });
 });

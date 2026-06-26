@@ -1,5 +1,31 @@
 import { Provider, CardData, ProviderError, formatNumber, fetchWithTimeout } from '../core';
 
+interface TwitchTokenResponse {
+  access_token: string;
+  expires_in: number;
+}
+
+interface TwitchUsersResponse {
+  data: Array<{
+    id: string;
+    login: string;
+    display_name: string;
+    profile_image_url: string;
+  }>;
+}
+
+interface TwitchFollowersResponse {
+  total: number;
+}
+
+interface TwitchStreamsResponse {
+  data: Array<{
+    title: string;
+    game_name: string;
+    viewer_count: number;
+  }>;
+}
+
 // Global cache variables for Twitch OAuth Token
 let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
@@ -22,11 +48,12 @@ async function getTwitchToken(clientId: string, clientSecret: string, forceRefre
         grant_type: 'client_credentials',
       }),
     });
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new ProviderError('unavailable', 'Serviço Indisponível', 'A autenticação com a Twitch expirou (timeout).');
     }
-    throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede na autenticação da Twitch: ${err.message}`);
+    const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+    throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede na autenticação da Twitch: ${msg}`);
   }
 
   if (!res.ok) {
@@ -37,16 +64,16 @@ async function getTwitchToken(clientId: string, clientSecret: string, forceRefre
     if (res.status >= 500) {
       throw new ProviderError('unavailable', 'Serviço Indisponível', `Serviço de autenticação da Twitch indisponível (Status ${res.status}).`);
     }
-    throw new ProviderError('unavailable', 'Serviço Indisponível', `Falha na autenticação da Twitch (Status ${res.status}): ${errorText.slice(0, 50)}...`);
+    throw new ProviderError('unavailable', 'Serviço Indisponível', `Falha na autenticação da Twitch (Status ${res.status}): ${errorText.length > 50 ? errorText.slice(0, 50) + '...' : errorText}`);
   }
 
-  const json = await res.json() as { access_token: string; expires_in: number };
+  const json = await res.json() as TwitchTokenResponse;
   cachedToken = json.access_token;
   tokenExpiresAt = Date.now() + (json.expires_in - 60) * 1000; // Buffer de 60s
   return cachedToken;
 }
 
-async function fetchTwitchHelix(url: string, clientId: string, clientSecret: string): Promise<any> {
+async function fetchTwitchHelix<T>(url: string, clientId: string, clientSecret: string): Promise<T> {
   let token = await getTwitchToken(clientId, clientSecret);
   
   let res: Response;
@@ -57,11 +84,12 @@ async function fetchTwitchHelix(url: string, clientId: string, clientSecret: str
         'Authorization': `Bearer ${token}`,
       },
     });
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
       throw new ProviderError('unavailable', 'Serviço Indisponível', 'A solicitação à Twitch expirou (timeout).');
     }
-    throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar a Twitch: ${err.message}`);
+    const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+    throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar a Twitch: ${msg}`);
   }
 
   if (res.status === 401) {
@@ -74,11 +102,12 @@ async function fetchTwitchHelix(url: string, clientId: string, clientSecret: str
           'Authorization': `Bearer ${token}`,
         },
       });
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
         throw new ProviderError('unavailable', 'Serviço Indisponível', 'A solicitação à Twitch expirou (timeout).');
       }
-      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar a Twitch: ${err.message}`);
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar a Twitch: ${msg}`);
     }
   }
 
@@ -90,34 +119,40 @@ async function fetchTwitchHelix(url: string, clientId: string, clientSecret: str
     if (res.status >= 500) {
       throw new ProviderError('unavailable', 'Serviço Indisponível', `Twitch indisponível (Status ${res.status}).`);
     }
-    throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro na API da Twitch (Status ${res.status}): ${errorText.slice(0, 50)}...`);
+    throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro na API da Twitch (Status ${res.status}): ${errorText.length > 50 ? errorText.slice(0, 50) + '...' : errorText}`);
   }
 
   return res.json();
 }
 
 export class TwitchProvider implements Provider {
-  async fetch(id: string): Promise<CardData | null> {
+  async fetch(id: string): Promise<CardData> {
     const twitchClientId = process.env.TWITCH_CLIENT_ID || '';
     const twitchClientSecret = process.env.TWITCH_CLIENT_SECRET || '';
 
-    // 1. Obter informações básicas do usuário
-    const userJson = await fetchTwitchHelix(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(id)}`, twitchClientId, twitchClientSecret);
-    
+    // user + stream são independentes: rodam em paralelo.
+    // Promise.all: ambas críticas — user sem identidade, stream sem layout (live/offline).
+    const [userJson, streamJson] = await Promise.all([
+      fetchTwitchHelix<TwitchUsersResponse>(`https://api.twitch.tv/helix/users?login=${encodeURIComponent(id)}`, twitchClientId, twitchClientSecret),
+      fetchTwitchHelix<TwitchStreamsResponse>(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(id)}`, twitchClientId, twitchClientSecret),
+    ]);
+
     validateTwitchUserResponse(userJson, id);
 
     const twitchUser = userJson.data[0];
     const displayName = twitchUser.display_name;
     const loginName = twitchUser.login;
     const profileImageUrl = twitchUser.profile_image_url;
+    const isLive = streamJson.data.length > 0;
 
-    // 1.5. Obter número de seguidores
-    const followersJson = await fetchTwitchHelix(`https://api.twitch.tv/helix/channels/followers?broadcaster_id=${twitchUser.id}&first=1`, twitchClientId, twitchClientSecret);
-    const followersCount = followersJson.total || 0;
-
-    // 2. Obter informações de transmissão ao vivo
-    const streamJson = await fetchTwitchHelix(`https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(id)}`, twitchClientId, twitchClientSecret);
-    const isLive = streamJson.data && streamJson.data.length > 0;
+    // followers precisa de broadcaster_id (não pode ser paralelo a user) — best-effort.
+    let followersCount = 0;
+    try {
+      const followersJson = await fetchTwitchHelix<TwitchFollowersResponse>(`https://api.twitch.tv/helix/channels/followers?broadcaster_id=${encodeURIComponent(twitchUser.id)}&first=1`, twitchClientId, twitchClientSecret);
+      followersCount = followersJson.total || 0;
+    } catch {
+      // best-effort: mantém 0
+    }
 
     if (isLive) {
       const stream = streamJson.data[0];
@@ -153,8 +188,9 @@ export class TwitchProvider implements Provider {
   }
 }
 
-export function validateTwitchUserResponse(userJson: any, id: string): void {
-  if (!userJson || !userJson.data || userJson.data.length === 0) {
+export function validateTwitchUserResponse(userJson: unknown, id: string): void {
+  const r = userJson as { data?: unknown[] };
+  if (!r?.data || r.data.length === 0) {
     throw new ProviderError('not_found', 'Channel Not Found', `Twitch channel "${id}" does not exist.`);
   }
 }
