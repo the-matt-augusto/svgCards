@@ -2,11 +2,14 @@
   "name": "svg-cards",
   "version": "1.0.0",
   "private": true,
-  "scripts": {},
+  "scripts": {
+    "test": "vitest run"
+  },
   "devDependencies": {
     "@types/node": "^26.0.0",
     "@vercel/node": "^5.8.18",
     "typescript": "^6.0.3",
-    "vercel": "^54.15.0"
+    "vercel": "^54.15.0",
+    "vitest": "^4.1.9"
   }
 }

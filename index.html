@@ -1143,11 +1143,11 @@
       const host = window.location.origin;
       let urlStr = '';
       if (selectedCardType === 'github') {
-        urlStr = `${host}/api/github?username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+        urlStr = `${host}/api?provider=github&username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
       } else if (selectedCardType === 'stackoverflow') {
-        urlStr = `${host}/api/stackoverflow?id=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+        urlStr = `${host}/api?provider=stackoverflow&id=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
       } else {
-        urlStr = `${host}/api/twitch?channel=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+        urlStr = `${host}/api?provider=twitch&channel=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
       }
       
       // Apenas adiciona cores customizadas se o toggle estiver ativo
