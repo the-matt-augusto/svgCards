@@ -11,10 +11,13 @@ interface ThemeConfig {
 const themes = {
   light:      { bg: "#ffffff", border: "#d0d7de", text: "#1f2328", subtext: "#656d76", accent: "#0969da" },
   dark:       { bg: "#0d1117", border: "#30363d", text: "#e6edf3", subtext: "#8b949e", accent: "#58a6ff" },
-  dracula:    { bg: "#282a36", border: "#44475a", text: "#f8f8f2", subtext: "#6272a4", accent: "#bd93f9" },
   nord:       { bg: "#2e3440", border: "#434c5e", text: "#eceff4", subtext: "#81a1c1", accent: "#88c0d0" },
   gruvbox:    { bg: "#282828", border: "#504945", text: "#ebdbb2", subtext: "#a89984", accent: "#fabd2f" },
-  catppuccin: { bg: "#1e1e2e", border: "#313244", text: "#cdd6f4", subtext: "#a6adc8", accent: "#cba6f7" },
+  tokyonight: { bg: "#1a1b26", border: "#292e42", text: "#c0caf5", subtext: "#565f89", accent: "#7aa2f7" },
+  onedark:    { bg: "#282c34", border: "#3e4451", text: "#abb2bf", subtext: "#5c6370", accent: "#61afef" },
+  spotify:    { bg: "#191414", border: "#282828", text: "#ffffff", subtext: "#b3b3b3", accent: "#1db954" },
+  youtube:    { bg: "#0f0f0f", border: "#282828", text: "#ffffff", subtext: "#aaaaaa", accent: "#ff0000" },
+  cyberpunk:  { bg: "#0c0813", border: "#ff0055", text: "#ffe600", subtext: "#9d7cd8", accent: "#00f0ff" },
 } as const;
 
 const fonts = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
@@ -115,7 +118,18 @@ export default async function handler(req: Request): Promise<Response> {
 
   const url = new URL(req.url);
   const requested = String(url.searchParams.get('theme') ?? "dark").toLowerCase();
-  const theme = (requested in themes) ? themes[requested as keyof typeof themes] : themes.dark;
+  const baseTheme = (requested in themes) ? themes[requested as keyof typeof themes] : themes.dark;
+
+  const theme: ThemeConfig = { ...baseTheme };
+  const hexRegex = /^[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/;
+  const colorKeys: (keyof ThemeConfig)[] = ['bg', 'border', 'text', 'subtext', 'accent'];
+
+  for (const key of colorKeys) {
+    const val = url.searchParams.get(key);
+    if (val && hexRegex.test(val)) {
+      theme[key] = `#${val}`;
+    }
+  }
 
   const username = url.searchParams.get('username');
 
@@ -274,6 +288,10 @@ export default async function handler(req: Request): Promise<Response> {
   <text x="135" y="40" font-family="${fonts}" font-size="20" font-weight="bold" fill="${theme.text}">${cleanName}</text>
   <text x="135" y="60" font-family="${fonts}" font-size="14" fill="${theme.subtext}">@${cleanLogin}</text>
   <text x="135" y="78" font-family="${fonts}" font-size="12" fill="${theme.subtext}">Membro desde ${memberSince}</text>
+  
+  <g transform="translate(390, 25) scale(1.2)">
+    <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z" fill="${theme.subtext}" />
+  </g>
   
   <text x="135" y="102" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Repos: <tspan fill="${theme.accent}" font-weight="bold">${cleanRepos}</tspan></text>
   <text x="210" y="102" font-family="${fonts}" font-size="13" fill="${theme.subtext}">Seguidores: <tspan fill="${theme.accent}" font-weight="bold">${cleanFollowers}</tspan></text>

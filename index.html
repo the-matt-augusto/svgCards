@@ -141,6 +141,33 @@
       border-color: var(--border-hover);
     }
 
+    /* Alternador de Tipo de Card */
+    .card-type-container {
+      display: flex;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+    .btn-type {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn-type.active {
+      background: var(--accent-gradient);
+      color: #fff;
+      box-shadow: 0 4px 15px -4px rgba(99, 102, 241, 0.4);
+    }
+
     /* Formulários e Inputs */
     .form-group {
       margin-bottom: 24px;
@@ -560,6 +587,238 @@
       50% { transform: scale(1.15); }
       100% { transform: scale(1); }
     }
+
+    /* Toggle Switch Group */
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 24px;
+      margin-bottom: 0;
+    }
+
+    .toggle-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--border-color);
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-muted);
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background: var(--accent-gradient);
+      border-color: transparent;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+      background-color: #fff;
+    }
+
+    /* Custom Colors Section Styling (Hidden by default) */
+    .custom-colors-section {
+      display: none;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .custom-colors-section.visible {
+      display: block;
+      animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .custom-colors-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+
+    .custom-colors-header .section-title {
+      margin-bottom: 0;
+    }
+
+    .btn-clear-colors {
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-clear-colors:hover {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .btn-clear-colors:active {
+      transform: scale(0.95);
+    }
+
+    .btn-clear-colors svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 14px;
+      background: var(--accent-gradient);
+      border-radius: 1.5px;
+    }
+
+    .color-inputs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 480px) {
+      .color-inputs-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .color-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .color-input-group label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .color-input-container {
+      display: flex;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 6px 12px;
+      gap: 10px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .color-input-container:focus-within {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .color-input-container input[type="color"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+      padding: 0;
+    }
+
+    .color-input-container input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .color-input-container input[type="color"]::-webkit-color-swatch {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+    }
+
+    .color-input-container input[type="text"] {
+      flex: 1;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 500;
+      outline: none;
+      padding: 6px 0;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -575,19 +834,32 @@
         </div>
       </div>
       <h1>SVG Cards</h1>
-      <p class="subtitle">Gere cartões dinâmicos e elegantes das suas estatísticas do GitHub</p>
+      <p class="subtitle" id="subtitleText">Gere cartões dinâmicos e elegantes das suas estatísticas do GitHub</p>
     </header>
 
     <main class="dashboard">
       <!-- Painel de Configurações -->
       <section class="card">
+        <!-- Alternador de Tipo de Card -->
+        <div class="card-type-container">
+          <button type="button" class="btn-type active" id="btnTypeGithub">GitHub</button>
+          <button type="button" class="btn-type" id="btnTypeStackoverflow">Stack Overflow</button>
+        </div>
+
         <div class="form-group">
-          <label for="username">Usuário do GitHub</label>
+          <label id="inputLabel" for="username">Usuário do GitHub</label>
           <div class="input-wrapper">
-            <div class="input-icon">
+            <div class="input-icon" id="inputIconGithub">
               <!-- Ícone GitHub -->
               <svg viewBox="0 0 24 24">
                 <path d="M12,2A10,10 0 0,0 2,12C2,16.53 4.91,20.38 9,21.69C9.5,21.78 9.68,21.48 9.68,21.22C9.68,21 9.67,20.3 9.67,19.46C6.89,20.06 6.3,18.12 6.3,18.12C5.84,16.97 5.19,16.66 5.19,16.66C4.28,16.04 5.27,16.05 5.27,16.05C6.27,16.12 6.8,17.08 6.8,17.08C7.69,18.61 9.14,18.17 9.71,17.91C9.8,17.27 10.05,16.83 10.33,16.58C8.11,16.33 5.78,15.47 5.78,11.64C5.78,10.55 6.17,9.66 6.8,8.96C6.7,8.7 6.35,7.69 6.9,6.32C6.9,6.32 7.74,6.05 9.65,7.35C10.45,7.13 11.3,7.03 12,7.03C12.7,7.03 13.55,7.13 14.35,7.35C16.26,6.05 17.1,6.32 17.1,6.32C17.65,7.69 17.3,8.7 17.2,8.96C17.83,9.66 18.22,10.55 18.22,11.64C18.22,15.48 15.89,16.32 13.66,16.57C14.03,16.89 14.35,17.5 14.35,18.44C14.35,19.79 14.34,20.89 14.34,21.22C14.34,21.48 14.5,21.79 15,21.69C19.08,20.37 22,16.53 22,12A10,10 0 0,0 12,2Z"/>
+              </svg>
+            </div>
+            <div class="input-icon" id="inputIconStackoverflow" style="display: none;">
+              <!-- Ícone Stack Overflow -->
+              <svg viewBox="0 0 24 24">
+                <path d="M18.986 20.892H1.996v-7.1h1.998v5.1h12.994v-5.1h1.998v7.1z" fill="currentColor" />
+                <path d="M5.995 14.896h8.995v1.998H5.995v-1.998zm.36-3.817l8.83 1.705.38-1.96-8.83-1.706-.38 1.961zm1.266-3.64l8.307 3.327.75-1.854-8.307-3.327-.75 1.853zm2.52-3.136l7.1 5.378 1.2-1.59-7.1-5.378-1.2 1.59zm3.996-2.303l5.378 7.1 1.59-1.2-5.378-7.1-1.59 1.2z" fill="#f48225" />
               </svg>
             </div>
             <input type="text" id="username" placeholder="Digite seu username (ex: octocat)" autocomplete="off">
@@ -610,6 +882,63 @@
             </div>
             <div class="custom-select-options" id="selectOptions">
               <!-- Opções renderizadas via JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group toggle-group">
+          <span class="toggle-label">Personalizar cores do tema</span>
+          <label class="switch">
+            <input type="checkbox" id="toggleColors">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="custom-colors-section">
+          <div class="custom-colors-header">
+            <div class="section-title">Cores Personalizadas (Opcional)</div>
+            <button type="button" id="btnClearColors" class="btn-clear-colors" title="Limpar todas as cores customizadas">
+              <svg viewBox="0 0 24 24">
+                <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" fill="currentColor"/>
+              </svg>
+              Limpar
+            </button>
+          </div>
+          <div class="color-inputs-grid">
+            <div class="color-input-group">
+              <label for="color-bg">Fundo (bg)</label>
+              <div class="color-input-container">
+                <input type="color" id="color-bg-picker" value="#0d1117">
+                <input type="text" id="color-bg" placeholder="Ex: 0d1117" maxlength="6" autocomplete="off">
+              </div>
+            </div>
+            <div class="color-input-group">
+              <label for="color-border">Borda (border)</label>
+              <div class="color-input-container">
+                <input type="color" id="color-border-picker" value="#30363d">
+                <input type="text" id="color-border" placeholder="Ex: 30363d" maxlength="6" autocomplete="off">
+              </div>
+            </div>
+            <div class="color-input-group">
+              <label for="color-text">Texto Principal (text)</label>
+              <div class="color-input-container">
+                <input type="color" id="color-text-picker" value="#e6edf3">
+                <input type="text" id="color-text" placeholder="Ex: e6edf3" maxlength="6" autocomplete="off">
+              </div>
+            </div>
+            <div class="color-input-group">
+              <label for="color-subtext">Subtexto (subtext)</label>
+              <div class="color-input-container">
+                <input type="color" id="color-subtext-picker" value="#8b949e">
+                <input type="text" id="color-subtext" placeholder="Ex: 8b949e" maxlength="6" autocomplete="off">
+              </div>
+            </div>
+            <div class="color-input-group">
+              <label for="color-accent">Destaque (accent)</label>
+              <div class="color-input-container">
+                <input type="color" id="color-accent-picker" value="#58a6ff">
+                <input type="text" id="color-accent" placeholder="Ex: 58a6ff" maxlength="6" autocomplete="off">
+              </div>
             </div>
           </div>
         </div>
@@ -683,16 +1012,20 @@
   <script>
     // Paletas dos Temas (conforme api/card.ts)
     const themes = {
-      light:      { label: "Light",      bg: "#ffffff", accent: "#0969da", text: "#1f2328" },
-      dark:       { label: "Dark",       bg: "#0d1117", accent: "#58a6ff", text: "#e6edf3" },
-      dracula:    { label: "Dracula",    bg: "#282a36", accent: "#bd93f9", text: "#f8f8f2" },
-      nord:       { label: "Nord",       bg: "#2e3440", accent: "#88c0d0", text: "#eceff4" },
-      gruvbox:    { label: "Gruvbox",    bg: "#282828", accent: "#fabd2f", text: "#ebdbb2" },
-      catppuccin: { label: "Catppuccin", bg: "#1e1e2e", accent: "#cba6f7", text: "#cdd6f4" },
+      light:      { label: "Light",      bg: "#ffffff", border: "#d0d7de", text: "#1f2328", subtext: "#656d76", accent: "#0969da" },
+      dark:       { label: "Dark",       bg: "#0d1117", border: "#30363d", text: "#e6edf3", subtext: "#8b949e", accent: "#58a6ff" },
+      nord:       { label: "Nord",       bg: "#2e3440", border: "#434c5e", text: "#eceff4", subtext: "#81a1c1", accent: "#88c0d0" },
+      gruvbox:    { label: "Gruvbox",    bg: "#282828", border: "#504945", text: "#ebdbb2", subtext: "#a89984", accent: "#fabd2f" },
+      tokyonight: { label: "Tokyo Night", bg: "#1a1b26", border: "#292e42", text: "#c0caf5", subtext: "#565f89", accent: "#7aa2f7" },
+      onedark:    { label: "One Dark",   bg: "#282c34", border: "#3e4451", text: "#abb2bf", subtext: "#5c6370", accent: "#61afef" },
+      spotify:    { label: "Spotify",    bg: "#191414", border: "#282828", text: "#ffffff", subtext: "#b3b3b3", accent: "#1db954" },
+      youtube:    { label: "YouTube",    bg: "#0f0f0f", border: "#282828", text: "#ffffff", subtext: "#aaaaaa", accent: "#ff0000" },
+      cyberpunk:  { label: "Cyberpunk",  bg: "#0c0813", border: "#ff0055", text: "#ffe600", subtext: "#9d7cd8", accent: "#00f0ff" },
     };
 
     let selectedTheme = 'dark';
     let debounceTimer;
+    let selectedCardType = 'github'; // 'github' or 'stackoverflow'
 
     // Elementos DOM
     const usernameInput = document.getElementById('username');
@@ -700,6 +1033,8 @@
     const triggerText = document.getElementById('triggerText');
     const triggerDots = document.getElementById('triggerDots');
     const selectOptions = document.getElementById('selectOptions');
+    const toggleColors = document.getElementById('toggleColors');
+    const customColorsSection = document.querySelector('.custom-colors-section');
     
     const previewWrapper = document.getElementById('previewWrapper');
     const previewImg = document.getElementById('previewImg');
@@ -772,39 +1107,82 @@
       updateTriggerContent(themeKey);
       themeSelect.classList.remove('open');
       
+      // Sincroniza os pickers de cor com o tema selecionado
+      syncColorInputs(themeKey);
+      
       updatePreview();
+    }
+
+    const colorKeys = ['bg', 'border', 'text', 'subtext', 'accent'];
+
+    // Sincroniza os inputs de texto e os pickers de cor com o tema atual se não forem customizados
+    function syncColorInputs(themeKey) {
+      const info = themes[themeKey];
+      colorKeys.forEach(key => {
+        const textInput = document.getElementById(`color-${key}`);
+        const pickerInput = document.getElementById(`color-${key}-picker`);
+        if (textInput && pickerInput) {
+          const val = textInput.value.trim();
+          if (!val) {
+            pickerInput.value = info[key];
+          }
+        }
+      });
     }
 
     // Gerador de URLs e Snippets
     function getCardUrl(username, theme) {
       const host = window.location.origin;
-      return `${host}/api/card?username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+      let urlStr = '';
+      if (selectedCardType === 'github') {
+        urlStr = `${host}/api/card?username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+      } else {
+        urlStr = `${host}/api/stackoverflow?id=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+      }
+      
+      // Apenas adiciona cores customizadas se o toggle estiver ativo
+      if (toggleColors && toggleColors.checked) {
+        const hexRegex = /^[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/;
+        colorKeys.forEach(key => {
+          const textInput = document.getElementById(`color-${key}`);
+          if (textInput) {
+            const val = textInput.value.trim();
+            if (val && hexRegex.test(val)) {
+              urlStr += `&${key}=${encodeURIComponent(val)}`;
+            }
+          }
+        });
+      }
+      return urlStr;
     }
 
     // Retorna URL canônica para produção no Vercel se não estiver localmente
     function getCardUrlForSnippet(username, theme) {
-      let host = window.location.origin;
-      // Se estiver local, mantém o local, senão usa a origem
-      return `${host}/api/card?username=${encodeURIComponent(username)}&theme=${encodeURIComponent(theme)}`;
+      return getCardUrl(username, theme);
     }
 
-    function getGitHubProfileUrl(username) {
-      return `https://github.com/${encodeURIComponent(username)}`;
+    function getProfileUrl(username) {
+      if (selectedCardType === 'github') {
+        return `https://github.com/${encodeURIComponent(username)}`;
+      } else {
+        return `https://stackoverflow.com/users/${encodeURIComponent(username)}`;
+      }
     }
 
     function updateSnippets(username) {
+      const cardTypeLabel = selectedCardType === 'github' ? 'GitHub Card' : 'Stack Overflow Card';
       if (!username) {
-        markdownCode.textContent = '[! [GitHub Card](...)...';
+        markdownCode.textContent = `[![${cardTypeLabel}](...)...`;
         htmlCode.textContent = '<a href="..."...';
         urlCode.textContent = 'https://...';
         return;
       }
 
       const cardUrl = getCardUrlForSnippet(username, selectedTheme);
-      const profileUrl = getGitHubProfileUrl(username);
+      const profileUrl = getProfileUrl(username);
 
-      const markdown = `[![GitHub Card](${cardUrl})](${profileUrl})`;
-      const html = `<a href="${profileUrl}"><img src="${cardUrl}" alt="GitHub Card" /></a>`;
+      const markdown = `[![${cardTypeLabel}](${cardUrl})](${profileUrl})`;
+      const html = `<a href="${profileUrl}"><img src="${cardUrl}" alt="${cardTypeLabel}" /></a>`;
 
       markdownCode.textContent = markdown;
       htmlCode.textContent = html;
@@ -888,6 +1266,49 @@
     }
 
     // Event Listeners
+    const btnTypeGithub = document.getElementById('btnTypeGithub');
+    const btnTypeStackoverflow = document.getElementById('btnTypeStackoverflow');
+    const inputLabel = document.getElementById('inputLabel');
+    const inputIconGithub = document.getElementById('inputIconGithub');
+    const inputIconStackoverflow = document.getElementById('inputIconStackoverflow');
+    const subtitleText = document.getElementById('subtitleText');
+    const placeholderText = placeholder.querySelector('.placeholder-text');
+
+    btnTypeGithub.addEventListener('click', () => {
+      if (selectedCardType === 'github') return;
+      selectedCardType = 'github';
+      btnTypeGithub.classList.add('active');
+      btnTypeStackoverflow.classList.remove('active');
+      
+      inputLabel.textContent = 'Usuário do GitHub';
+      usernameInput.placeholder = 'Digite seu username (ex: octocat)';
+      inputIconGithub.style.display = 'flex';
+      inputIconStackoverflow.style.display = 'none';
+      subtitleText.textContent = 'Gere cartões dinâmicos e elegantes das suas estatísticas do GitHub';
+      placeholderText.textContent = 'Digite um username para carregar o preview.';
+      previewImg.alt = 'GitHub Profile Card';
+      
+      usernameInput.value = ''; // Limpa o input ao alternar
+      updatePreview();
+    });
+
+    btnTypeStackoverflow.addEventListener('click', () => {
+      if (selectedCardType === 'stackoverflow') return;
+      selectedCardType = 'stackoverflow';
+      btnTypeStackoverflow.classList.add('active');
+      btnTypeGithub.classList.remove('active');
+      
+      inputLabel.textContent = 'User ID do Stack Overflow';
+      usernameInput.placeholder = 'Digite seu ID numérico (ex: 1)';
+      inputIconGithub.style.display = 'none';
+      inputIconStackoverflow.style.display = 'flex';
+      subtitleText.textContent = 'Gere cartões dinâmicos e elegantes da sua reputação do Stack Overflow';
+      placeholderText.textContent = 'Digite um ID numérico para carregar o preview.';
+      previewImg.alt = 'Stack Overflow Profile Card';
+      
+      usernameInput.value = ''; // Limpa o input ao alternar
+      updatePreview();
+    });
     usernameInput.addEventListener('input', () => {
       // Placeholder instantâneo ao limpar
       if (!usernameInput.value.trim()) {
@@ -900,8 +1321,67 @@
       debounceTimer = setTimeout(updatePreview, 400);
     });
 
+    toggleColors.addEventListener('change', () => {
+      if (toggleColors.checked) {
+        customColorsSection.classList.add('visible');
+      } else {
+        customColorsSection.classList.remove('visible');
+      }
+      updatePreview();
+    });
+
+    const btnClearColors = document.getElementById('btnClearColors');
+    if (btnClearColors) {
+      btnClearColors.addEventListener('click', () => {
+        colorKeys.forEach(key => {
+          const textInput = document.getElementById(`color-${key}`);
+          const pickerInput = document.getElementById(`color-${key}-picker`);
+          if (textInput && pickerInput) {
+            textInput.value = '';
+            pickerInput.value = themes[selectedTheme][key];
+          }
+        });
+        updatePreview();
+      });
+    }
+
+    // Event listeners para os pickers e campos de texto das cores
+    colorKeys.forEach(key => {
+      const textInput = document.getElementById(`color-${key}`);
+      const pickerInput = document.getElementById(`color-${key}-picker`);
+
+      if (textInput && pickerInput) {
+        // Ao mudar no picker, atualiza o campo de texto e o preview
+        pickerInput.addEventListener('input', () => {
+          const val = pickerInput.value.replace('#', '');
+          textInput.value = val;
+          updatePreview();
+        });
+
+        // Ao digitar no campo de texto, valida e atualiza o picker
+        textInput.addEventListener('input', () => {
+          const val = textInput.value.trim();
+          const hexRegex = /^[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/;
+          if (val && hexRegex.test(val)) {
+            let hexColor = val;
+            if (hexColor.length === 3) {
+              hexColor = hexColor.split('').map(c => c + c).join('');
+            }
+            pickerInput.value = `#${hexColor}`;
+          } else {
+            // Se estiver vazio ou inválido, o picker mostra a cor padrão do tema
+            pickerInput.value = themes[selectedTheme][key];
+          }
+          
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(updatePreview, 400);
+        });
+      }
+    });
+
     // Inicia tudo
     initDropdown();
+    syncColorInputs(selectedTheme);
     setupCopyBtn('btnCopyMarkdown', markdownCode);
     setupCopyBtn('btnCopyHtml', htmlCode);
     setupCopyBtn('btnCopyUrl', urlCode);
