@@ -46,10 +46,10 @@ describe('GitHub Provider - validateGitHubResponse', () => {
     );
   });
 
-  it('should throw "User Not Found" when data/user is missing', () => {
+  it('should report unavailable when data/user is missing', () => {
     const json = {};
     expect(() => validateGitHubResponse(json, 'invalid-user')).toThrowError(
-      new ProviderError('not_found', 'User Not Found', 'GitHub user "invalid-user" does not exist.')
+      new ProviderError('unavailable', 'GitHub API Error', 'Resposta inválida da API do GitHub.')
     );
   });
 
@@ -69,14 +69,14 @@ describe('GitHub Provider - validateGitHubResponse', () => {
       data: { user: { login: 'octocat' } }
     };
     expect(() => validateGitHubResponse(json, 'octocat')).toThrowError(
-      new ProviderError('rate_limited', 'Limite Atingido', 'Rate limit exceeded')
+      new ProviderError('rate_limited', 'Limite Atingido', 'Limite de requisições à API do GitHub atingido.')
     );
   });
 
   it('should throw rate_limited (not not_found) when rate-limit error has no data field', () => {
     const json = { errors: [{ message: 'API rate limit exceeded for this resource.' }] };
     expect(() => validateGitHubResponse(json, 'octocat')).toThrowError(
-      new ProviderError('rate_limited', 'Limite Atingido', 'API rate limit exceeded for this resource.')
+      new ProviderError('rate_limited', 'Limite Atingido', 'Limite de requisições à API do GitHub atingido.')
     );
   });
 });
@@ -120,5 +120,60 @@ describe('Twitch Provider - validateTwitchUserResponse', () => {
     expect(() => validateTwitchUserResponse(json, 'nonexistent')).toThrowError(
       new ProviderError('not_found', 'Channel Not Found', 'Twitch channel "nonexistent" does not exist.')
     );
+  });
+});
+
+describe('Validadores - nenhum texto de upstream chega ao cartão', () => {
+  // Regressão: os blocos !response.ok já eram genéricos, mas GraphQL responde
+  // erro com HTTP 200 em errors[] e a Stack Exchange usa error_message no corpo.
+  // Esses dois caminhos repassavam o texto cru do provider até o SVG público.
+
+  it('não repassa mensagem de errors[] do GraphQL do GitHub', () => {
+    const json = {
+      errors: [{ type: 'INTERNAL', message: 'db-replica-07.gh.internal timed out' }],
+      data: { user: { login: 'octocat' } },
+    };
+    try {
+      validateGitHubResponse(json, 'octocat');
+      throw new Error('deveria ter lançado');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ProviderError);
+      expect((err as ProviderError).message).not.toContain('db-replica-07');
+      expect((err as ProviderError).message).toBe('Serviço temporariamente indisponível.');
+    }
+  });
+
+  it('não repassa mensagem de rate limit do GraphQL do GitHub', () => {
+    const json = { errors: [{ message: 'API rate limit exceeded for user ID 12345.' }] };
+    try {
+      validateGitHubResponse(json, 'octocat');
+      throw new Error('deveria ter lançado');
+    } catch (err) {
+      expect((err as ProviderError).category).toBe('rate_limited');
+      expect((err as ProviderError).message).not.toContain('12345');
+    }
+  });
+
+  it('não repassa error_message da Stack Exchange, que pode ecoar a STACKAPPS_KEY', () => {
+    const json = { error_id: 403, error_message: "key 'abc123secret' is not valid" };
+    try {
+      validateStackOverflowResponse(json, '1');
+      throw new Error('deveria ter lançado');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ProviderError);
+      expect((err as ProviderError).message).not.toContain('abc123secret');
+      expect((err as ProviderError).message).not.toContain('key');
+    }
+  });
+
+  it('preserva a classificação de rate limit da Stack Exchange sem o texto cru', () => {
+    const json = { error_id: 502, error_message: 'Violation of throttle for key xyz' };
+    try {
+      validateStackOverflowResponse(json, '1');
+      throw new Error('deveria ter lançado');
+    } catch (err) {
+      expect((err as ProviderError).category).toBe('rate_limited');
+      expect((err as ProviderError).message).not.toContain('xyz');
+    }
   });
 });

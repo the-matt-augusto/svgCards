@@ -1,9 +1,15 @@
 {
   "name": "svg-cards",
   "version": "1.0.0",
+  "description": "Dynamic, responsive, and embeddable SVG stats cards for GitHub, Stack Overflow, and Twitch",
+  "license": "GPL-3.0",
   "private": true,
   "scripts": {
-    "test": "vitest run"
+    "build": "tsc",
+    "start": "node server.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^26.0.0",

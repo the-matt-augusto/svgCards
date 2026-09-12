@@ -1,7 +1,8 @@
 import { Provider, CardData, ProviderError, formatNumber, fetchWithTimeout } from '../core';
+import { isPlaceholder } from '../utils/config';
 
 interface GitHubGraphQLResponse {
-  errors?: Array<{ message: string }>;
+  errors?: Array<{ type?: string; message: string }>;
   data?: {
     user: {
       name: string | null;
@@ -34,14 +35,20 @@ interface GitHubGraphQLResponse {
 export class GitHubProvider implements Provider {
   async fetch(id: string): Promise<CardData> {
     const token = process.env.GITHUB_TOKEN;
+    if (!token || isPlaceholder(token)) {
+      console.error('[GitHub Config] GITHUB_TOKEN obrigatório não configurado ou contém valor de exemplo.');
+      throw new ProviderError(
+        'unavailable',
+        'Serviço Indisponível',
+        'Serviço temporariamente indisponível.'
+      );
+    }
+
     const headers: Record<string, string> = {
       'User-Agent': 'Vercel-GitHub-Card',
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
     };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
 
     const query = `
       query($login: String!) {
@@ -88,18 +95,28 @@ export class GitHubProvider implements Provider {
         throw new ProviderError('unavailable', 'Serviço Indisponível', 'A solicitação ao GitHub expirou (timeout).');
       }
       const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar o GitHub: ${msg}`);
+      console.error(`[GitHub Network Error] ${msg}`);
+      throw new ProviderError('unavailable', 'Serviço Indisponível', 'Erro de rede ao acessar o GitHub.');
     }
 
     if (!response.ok) {
       const errText = await response.text();
+      console.error(`[GitHub Error] Status ${response.status}: ${errText}`);
+      if (response.status === 401 || errText.toLowerCase().includes('bad credentials')) {
+        console.error('[GitHub Auth] Token do GitHub inválido ou expirado.');
+        throw new ProviderError(
+          'unavailable',
+          'Serviço Indisponível',
+          'Serviço temporariamente indisponível.'
+        );
+      }
       if (response.status === 429 || (response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0')) {
         throw new ProviderError('rate_limited', 'Limite Atingido', 'Limite de requisições à API do GitHub atingido.');
       }
       if (response.status >= 500) {
-        throw new ProviderError('unavailable', 'Serviço Indisponível', `GitHub indisponível (Status ${response.status}).`);
+        throw new ProviderError('unavailable', 'Serviço Indisponível', 'GitHub indisponível.');
       }
-      throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro na API do GitHub (Status ${response.status}): ${errText.length > 50 ? errText.slice(0, 50) + '...' : errText}`);
+      throw new ProviderError('unavailable', 'Serviço Indisponível', 'Serviço temporariamente indisponível.');
     }
 
     const json = await response.json() as GitHubGraphQLResponse;
@@ -163,20 +180,27 @@ export class GitHubProvider implements Provider {
 }
 
 export function validateGitHubResponse(json: unknown, id: string): void {
-  const r = json as { errors?: Array<{ message: string }>; data?: { user: object | null } | null };
+  const r = json as { errors?: Array<{ type?: string; message: string }>; data?: { user: object | null } | null };
   if (r?.errors?.length) {
-    const errMsg = r.errors[0].message || 'GraphQL Error';
-    if (errMsg.toLowerCase().includes('rate limit') || errMsg.toLowerCase().includes('secondary rate')) {
-      throw new ProviderError('rate_limited', 'Limite Atingido', errMsg);
+    const rateLimitError = r.errors.find(error =>
+      error.type === 'RATE_LIMITED' || /rate limit|secondary rate/i.test(error.message)
+    );
+    if (rateLimitError) {
+      console.error(`[GitHub GraphQL] Rate limit: ${rateLimitError.message}`);
+      throw new ProviderError('rate_limited', 'Limite Atingido', 'Limite de requisições à API do GitHub atingido.');
     }
-    // Usuário inexistente vem como 200 com errors NOT_FOUND + data.user null;
-    // detecta o "não encontrado" pelo corpo antes de tratar como indisponível.
-    if (r.data?.user) {
-      throw new ProviderError('unavailable', 'GitHub API Error', errMsg);
+    const serviceError = r.errors.find(error => error.type !== 'NOT_FOUND');
+    if (serviceError || r.data?.user) {
+      console.error(`[GitHub GraphQL] ${(serviceError || r.errors[0]).message || 'GraphQL Error'}`);
+      throw new ProviderError('unavailable', 'Serviço Indisponível', 'Serviço temporariamente indisponível.');
     }
+    throw new ProviderError('not_found', 'User Not Found', `GitHub user "${id}" does not exist.`);
+  }
+  if (r?.data?.user === null) {
+    throw new ProviderError('not_found', 'User Not Found', `GitHub user "${id}" does not exist.`);
   }
   if (!r?.data?.user) {
-    throw new ProviderError('not_found', 'User Not Found', `GitHub user "${id}" does not exist.`);
+    throw new ProviderError('unavailable', 'GitHub API Error', 'Resposta inválida da API do GitHub.');
   }
 }
 
@@ -197,4 +221,3 @@ export function calculateStreak(days: Array<{ contributionCount: number }>): num
   }
   return streak;
 }
-

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { safeHex, renderSvg, escapeXml, fetchAvatarBase64, formatNumber } from '../api/core';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { safeHex, renderSvg, escapeXml, fetchAvatarBase64, formatNumber, isPlaceholder, isAllowedAvatarHost, getClientIp } from '../api/core';
 import type { GitHubCardData, ThemeConfig } from '../api/core';
 
 describe('escapeXml', () => {
@@ -8,8 +8,8 @@ describe('escapeXml', () => {
   it('escapes &', () => expect(escapeXml('&')).toBe('&amp;'));
   it("escapes '", () => expect(escapeXml("'")).toBe('&apos;'));
   it('escapes "', () => expect(escapeXml('"')).toBe('&quot;'));
-  it('returns empty string for null', () => expect(escapeXml(null as any)).toBe(''));
-  it('returns empty string for undefined', () => expect(escapeXml(undefined as any)).toBe(''));
+  it('returns empty string for null', () => expect(escapeXml(null)).toBe(''));
+  it('returns empty string for undefined', () => expect(escapeXml(undefined)).toBe(''));
   it('escapes combined injection attempt', () => {
     expect(escapeXml('<img src="x" onerror=\'alert(1)\'>&')).toBe(
       '&lt;img src=&quot;x&quot; onerror=&apos;alert(1)&apos;&gt;&amp;'
@@ -40,8 +40,8 @@ describe('safeHex', () => {
 
   it('should reject empty strings, null, or undefined', () => {
     expect(safeHex('')).toBe(false);
-    expect(safeHex(null as any)).toBe(false);
-    expect(safeHex(undefined as any)).toBe(false);
+    expect(safeHex(null)).toBe(false);
+    expect(safeHex(undefined)).toBe(false);
   });
 
   it('should reject 7-digit hex strings', () => {
@@ -159,15 +159,121 @@ describe('renderSvg - avatar fallback', () => {
   });
 });
 
-describe('fetchAvatarBase64 - URL scheme allowlist', () => {
+describe('fetchAvatarBase64 - Security Controls (SSRF, host allowlist, redirects, size cap, MIME)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('returns empty string for javascript: URL', async () => {
     expect(await fetchAvatarBase64('javascript:alert(1)', 'github')).toBe('');
   });
+
   it('returns empty string for http:// URL', async () => {
     expect(await fetchAvatarBase64('http://example.com/avatar.jpg', 'github')).toBe('');
   });
+
   it('returns empty string for empty input', async () => {
     expect(await fetchAvatarBase64('', 'github')).toBe('');
+  });
+
+  it('returns empty string for URL with host outside allowlist without performing network request', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+
+    expect(await fetchAvatarBase64('https://malicious.internal/avatar.jpg', 'github')).toBe('');
+    expect(await fetchAvatarBase64('https://evil-avatars.githubusercontent.com/a.png', 'github')).toBe('');
+    expect(await fetchAvatarBase64('https://attacker.com/avatar.png', 'twitch')).toBe('');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('aborts and returns empty string when redirect points to host outside allowlist', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, {
+      status: 302,
+      headers: { location: 'https://evil.internal/metadata' },
+    })));
+
+    const result = await fetchAvatarBase64('https://avatars.githubusercontent.com/u/1', 'github');
+    expect(result).toBe('');
+  });
+
+  it('aborts and returns empty string when resource exceeds 512 KB', async () => {
+    // 600 KB mock payload
+    const largeBody = new Uint8Array(600 * 1024);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(largeBody, {
+      status: 200,
+      headers: {
+        'content-type': 'image/png',
+        'content-length': (600 * 1024).toString(),
+      },
+    })));
+
+    const result = await fetchAvatarBase64('https://avatars.githubusercontent.com/u/1', 'github');
+    expect(result).toBe('');
+  });
+
+  it('aborts and returns empty string when Content-Type is not an allowed image MIME type', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('<html>evil</html>', {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    })));
+
+    const result = await fetchAvatarBase64('https://avatars.githubusercontent.com/u/1', 'github');
+    expect(result).toBe('');
+  });
+
+  it('successfully returns base64 data URI for valid host and image MIME type', async () => {
+    const imageBytes = new Uint8Array([137, 80, 78, 71]); // PNG magic bytes
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(imageBytes, {
+      status: 200,
+      headers: { 'content-type': 'image/png' },
+    })));
+
+    const result = await fetchAvatarBase64('https://avatars.githubusercontent.com/u/1', 'github');
+    expect(result).toMatch(/^data:image\/png;base64,/);
+  });
+});
+
+describe('isAllowedAvatarHost', () => {
+  it('allows exact avatars.githubusercontent.com for github', () => {
+    expect(isAllowedAvatarHost('avatars.githubusercontent.com', 'github')).toBe(true);
+    expect(isAllowedAvatarHost('githubusercontent.com', 'github')).toBe(false);
+    expect(isAllowedAvatarHost('evil-avatars.githubusercontent.com', 'github')).toBe(false);
+  });
+
+  it('allows sstatic.net and gravatar domains for stackoverflow', () => {
+    expect(isAllowedAvatarHost('sstatic.net', 'stackoverflow')).toBe(true);
+    expect(isAllowedAvatarHost('i.sstatic.net', 'stackoverflow')).toBe(true);
+    expect(isAllowedAvatarHost('gravatar.com', 'stackoverflow')).toBe(true);
+    expect(isAllowedAvatarHost('www.gravatar.com', 'stackoverflow')).toBe(true);
+    expect(isAllowedAvatarHost('evilgravatar.com', 'stackoverflow')).toBe(false);
+  });
+
+  it('allows static-cdn.jtvnw.net for twitch', () => {
+    expect(isAllowedAvatarHost('static-cdn.jtvnw.net', 'twitch')).toBe(true);
+    expect(isAllowedAvatarHost('sub.static-cdn.jtvnw.net', 'twitch')).toBe(true);
+    expect(isAllowedAvatarHost('evilstatic-cdn.jtvnw.net', 'twitch')).toBe(false);
+  });
+});
+
+describe('isPlaceholder', () => {
+  it('detects .env.example placeholders ending with _here or starting with your_', () => {
+    expect(isPlaceholder('your_github_token_here')).toBe(true);
+    expect(isPlaceholder('your_twitch_client_id_here')).toBe(true);
+    expect(isPlaceholder('your_stackapps_key_here')).toBe(true);
+    expect(isPlaceholder('placeholder_here')).toBe(true);
+  });
+
+  it('detects empty or whitespace strings, null, and undefined', () => {
+    expect(isPlaceholder('')).toBe(true);
+    expect(isPlaceholder('   ')).toBe(true);
+    expect(isPlaceholder(null)).toBe(true);
+    expect(isPlaceholder(undefined)).toBe(true);
+  });
+
+  it('accepts legitimate token strings', () => {
+    expect(isPlaceholder('ghp_1234567890abcdef')).toBe(false);
+    expect(isPlaceholder('valid_client_secret_xyz')).toBe(false);
+    expect(isPlaceholder('12345')).toBe(false);
   });
 });
 
@@ -184,4 +290,68 @@ describe('formatNumber', () => {
   it('formats -500 as "-500"',           () => expect(formatNumber(-500)).toBe('-500'));
   it('formats -1500 as "-1.5k"',         () => expect(formatNumber(-1500)).toBe('-1.5k'));
   it('formats -1000000 as "-1M"',        () => expect(formatNumber(-1000000)).toBe('-1M'));
+});
+
+describe('getClientIp - resistência a X-Forwarded-For forjado', () => {
+  const reqWith = (headers: Record<string, string>) =>
+    new Request('https://example.com/api/github?username=octocat', { headers });
+
+  it('usa o último segmento do XFF, não o primeiro escrito pelo cliente', () => {
+    // O cliente antepõe um IP falso; a borda acrescenta o real ao final.
+    const ip = getClientIp(reqWith({ 'x-forwarded-for': '1.2.3.4, 203.0.113.7' }));
+    expect(ip).toBe('203.0.113.7');
+    expect(ip).not.toBe('1.2.3.4');
+  });
+
+  it('atribui o mesmo balde a requisições que só variam o prefixo forjado', () => {
+    const a = getClientIp(reqWith({ 'x-forwarded-for': '9.9.9.1, 203.0.113.7' }));
+    const b = getClientIp(reqWith({ 'x-forwarded-for': '9.9.9.2, 203.0.113.7' }));
+    const c = getClientIp(reqWith({ 'x-forwarded-for': 'nao-e-um-ip, 203.0.113.7' }));
+    expect(a).toBe(b);
+    expect(b).toBe(c);
+  });
+
+  it('prefere x-real-ip, que a borda escreve com valor único', () => {
+    const ip = getClientIp(reqWith({ 'x-real-ip': '198.51.100.9', 'x-forwarded-for': '1.2.3.4' }));
+    expect(ip).toBe('198.51.100.9');
+  });
+
+  it('descarta valor que não se parece com IP e cai no balde compartilhado', () => {
+    expect(getClientIp(reqWith({ 'x-forwarded-for': 'meu-proxy-interno' }))).toBe('unknown');
+    expect(getClientIp(reqWith({ 'x-real-ip': '999.999.999.999' }))).toBe('unknown');
+    expect(getClientIp(reqWith({}))).toBe('unknown');
+  });
+
+  it('recua o número de saltos configurado em TRUSTED_PROXY_HOPS', () => {
+    vi.stubEnv('TRUSTED_PROXY_HOPS', '2');
+    const ip = getClientIp(reqWith({ 'x-forwarded-for': '1.2.3.4, 198.51.100.9, 203.0.113.7' }));
+    expect(ip).toBe('198.51.100.9');
+    vi.unstubAllEnvs();
+  });
+});
+
+describe('ALLOWED_IMAGE_MIME_TYPES - SVG não é aceito como avatar', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('descarta avatar servido como image/svg+xml mesmo vindo de host permitido', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([1, 2, 3]), {
+        status: 200,
+        headers: { 'content-type': 'image/svg+xml' },
+      })
+    ));
+    const out = await fetchAvatarBase64('https://avatars.githubusercontent.com/u/1', 'github');
+    expect(out).toBe('');
+  });
+
+  it('continua aceitando PNG do host permitido', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([1, 2, 3]), {
+        status: 200,
+        headers: { 'content-type': 'image/png' },
+      })
+    ));
+    const out = await fetchAvatarBase64('https://avatars.githubusercontent.com/u/1', 'github');
+    expect(out).toMatch(/^data:image\/png;base64,/);
+  });
 });

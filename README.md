@@ -182,13 +182,10 @@ Node.js e Vercel CLI instalados.
 
 ### Variáveis de ambiente
 
-Crie `.env` na raiz:
+Copie `.env.example` para `.env` na raiz:
 
-```env
-GITHUB_TOKEN=seu_pat_aqui
-STACKAPPS_KEY=sua_chave_aqui
-TWITCH_CLIENT_ID=seu_client_id_aqui
-TWITCH_CLIENT_SECRET=seu_client_secret_aqui
+```bash
+cp .env.example .env
 ```
 
 | Variável | Obrigatória | Como obter |
@@ -211,17 +208,22 @@ A API fica disponível em `http://localhost:3000`.
 
 ---
 
-## Testes
+## Verificação e Testes
 
 ```bash
+# Executar todos os testes
 npm test
+
+# Verificação estática de tipos
+npm run typecheck
 ```
 
-Três suítes com Vitest, todas sobre funções puras — sem chamadas reais às APIs:
+Quatro suítes com Vitest, todas sobre funções puras — sem chamadas reais às APIs:
 
 - **`tests/core.test.ts`** — `escapeXml` (incluindo tentativas de injeção), `safeHex` (allowlist e rejeição de nomes de cor e payloads), fallback de avatar para inicial (unicode, emoji, casos limite), `formatNumber`, allowlist de esquema em `fetchAvatarBase64`
 - **`tests/providers.test.ts`** — `calculateStreak` (sequência normal, hoje zerado, tudo zerado, quebra no meio), detecção de "não encontrado" por array vazio em cada provider, erros GraphQL com HTTP 200
 - **`tests/resilience.test.ts`** — `fetchWithTimeout` (sucesso e AbortError), `handleRequest` com mocks de fetch: parâmetro ausente, usuário não encontrado, rate limit, 5xx e timeout — verificando status HTTP correto e `Cache-Control: no-store` em todos os casos de erro
+- **`tests/render.test.ts`** — Renderização de cartões do Stack Overflow, Twitch (Ao vivo e Offline), quebra e truncamento de linhas no cartão de erro e resolução dinâmica de temas com cores customizadas
 
 ---
 
