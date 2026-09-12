@@ -393,6 +393,63 @@ describe('handleRequest - error caching and status codes', () => {
       expect(svg).toContain('Ocorreu um erro interno');
       expect(svg).toContain('cartão.');
     });
+
+    it('does not leak internal Twitch network error details into public SVG (A-03)', async () => {
+      vi.stubEnv('TWITCH_CLIENT_ID', 'test-client-id');
+      vi.stubEnv('TWITCH_CLIENT_SECRET', 'test-client-secret');
+
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/oauth2/token')) {
+          return new Response(JSON.stringify({ access_token: 'test-token', expires_in: 3600 }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        throw new Error('INTERNAL_AUDIT_MARKER: proxy socket reset at 10.0.0.12:8080');
+      }));
+
+      const res = await handleRequest(new Request('https://example.com/api/twitch?channel=ninja'), 'twitch');
+      expect(res.status).toBe(503);
+
+      const svg = await res.text();
+      expect(svg).not.toContain('INTERNAL_AUDIT_MARKER');
+      expect(svg).not.toContain('proxy socket reset');
+      expect(svg).not.toContain('10.0.0.12');
+      expect(svg).toContain('Serviço Indisponível');
+      expect(svg).toContain('Erro de rede ao acessar a Twitch.');
+
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    });
+
+    it('preserves AbortError timeout message in Twitch Helix without leaking internal stack', async () => {
+      vi.stubEnv('TWITCH_CLIENT_ID', 'test-client-id');
+      vi.stubEnv('TWITCH_CLIENT_SECRET', 'test-client-secret');
+
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/oauth2/token')) {
+          return new Response(JSON.stringify({ access_token: 'test-token', expires_in: 3600 }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        const err = new Error('The operation was aborted');
+        err.name = 'AbortError';
+        throw err;
+      }));
+
+      const res = await handleRequest(new Request('https://example.com/api/twitch?channel=ninja'), 'twitch');
+      expect(res.status).toBe(503);
+
+      const svg = await res.text();
+      expect(svg).toContain('A solicitação à Twitch expirou');
+      expect(svg).toContain('(timeout).');
+
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    });
   });
 });
 

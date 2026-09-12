@@ -7,4 +7,4 @@ node_modules
 dist
 docs/security-audit/.venv/
 __pycache__/
-server.mjs
+.vscode/

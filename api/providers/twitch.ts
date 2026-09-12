@@ -104,7 +104,8 @@ async function fetchTwitchHelix<T>(url: string, clientId: string, clientSecret: 
       throw new ProviderError('unavailable', 'Serviço Indisponível', 'A solicitação à Twitch expirou (timeout).');
     }
     const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-    throw new ProviderError('unavailable', 'Serviço Indisponível', `Erro de rede ao acessar a Twitch: ${msg}`);
+    console.error(`[Twitch Network Error] ${msg}`);
+    throw new ProviderError('unavailable', 'Serviço Indisponível', 'Erro de rede ao acessar a Twitch.');
   }
 
   if (res.status === 401) {

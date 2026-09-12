@@ -58,7 +58,7 @@ export class GitHubProvider implements Provider {
           avatarUrl(size: 120)
           createdAt
           followers { totalCount }
-          repositories(first: 100, ownerAffiliations: OWNER,
+          repositories(first: 100, ownerAffiliations: OWNER, privacy: PUBLIC,
                        orderBy: {field: STARGAZERS, direction: DESC}) {
             totalCount
             nodes {

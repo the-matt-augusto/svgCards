@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ProviderError } from '../api/core';
-import { calculateStreak, validateGitHubResponse } from '../api/providers/github';
+import { calculateStreak, validateGitHubResponse, GitHubProvider } from '../api/providers/github';
 import { validateStackOverflowResponse } from '../api/providers/stackoverflow';
 import { validateTwitchUserResponse } from '../api/providers/twitch';
 
@@ -175,5 +175,52 @@ describe('Validadores - nenhum texto de upstream chega ao cartão', () => {
       expect((err as ProviderError).category).toBe('rate_limited');
       expect((err as ProviderError).message).not.toContain('xyz');
     }
+  });
+});
+
+describe('GitHubProvider.fetch - isolamento e privacidade (A-01)', () => {
+  it('exige privacy: PUBLIC na conexão repositories da query GraphQL', async () => {
+    let sentQuery = '';
+    vi.stubEnv('GITHUB_TOKEN', 'test-token-github-12345');
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async (_input: unknown, init: any) => {
+      const body = JSON.parse(init.body);
+      sentQuery = body.query;
+      return new Response(JSON.stringify({
+        data: {
+          user: {
+            name: 'Test User',
+            login: 'testuser',
+            avatarUrl: 'https://avatars.githubusercontent.com/u/1',
+            createdAt: '2021-01-01T00:00:00Z',
+            followers: { totalCount: 10 },
+            repositories: {
+              totalCount: 5,
+              nodes: [
+                { stargazerCount: 12, primaryLanguage: { name: 'TypeScript', color: '#3178c6' } },
+              ],
+            },
+            contributionsCollection: {
+              totalCommitContributions: 100,
+              totalPullRequestContributions: 20,
+              totalIssueContributions: 5,
+              contributionCalendar: {
+                totalContributions: 125,
+                weeks: [],
+              },
+            },
+          },
+        },
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }));
+
+    const provider = new GitHubProvider();
+    const data = await provider.fetch('testuser');
+
+    expect(sentQuery).toMatch(/repositories\s*\([^)]*privacy\s*:\s*PUBLIC/);
+    expect(data.stats.find(s => s.label === 'Repos')?.value).toBe('5');
+    expect(data.stats.find(s => s.label === 'Estrelas')?.value).toBe('12');
+
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 });

@@ -188,12 +188,14 @@ Copie `.env.example` para `.env` na raiz:
 cp .env.example .env
 ```
 
-| Variável | Obrigatória | Como obter |
+| Variável | Obrigatória | Como obter e segurança |
 |---|---|---|
-| `GITHUB_TOKEN` | Sim (para GraphQL) | GitHub → Settings → Developer settings → Personal access tokens. Somente-leitura de dados públicos basta. Sem ele, GraphQL retorna 401. |
+| `GITHUB_TOKEN` | Sim (para GraphQL) | GitHub → Settings → Developer settings → Personal access tokens. **Privilégio mínimo**: use Classic Token sem escopos ou Fine-grained Token com leitura exclusiva de repositórios públicos (nunca conceda o escopo `repo`). Sem token, GraphQL retorna 401. |
 | `STACKAPPS_KEY` | Não | stackapps.com → Apps. Sem ela, a cota é 300 req/dia. |
 | `TWITCH_CLIENT_ID` | Sim | dev.twitch.tv → Console → Applications |
 | `TWITCH_CLIENT_SECRET` | Sim | Mesmo app acima |
+| `RATE_LIMIT_MAX_PER_MINUTE` | Não | Limite de requisições por IP/minuto (padrão: 60). |
+| `TRUST_PROXY` / `TRUSTED_PROXIES` | Não | No servidor Node local (`server.mjs`), define se cabeçalhos de proxy (`x-real-ip`, `x-forwarded-for`) são confiáveis. Por padrão é `false` (usa `socket.remoteAddress` contra spoofing). |
 
 ### Iniciar
 
