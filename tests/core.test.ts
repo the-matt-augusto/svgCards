@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { safeHex, renderSvg, escapeXml, fetchAvatarBase64, formatNumber, isPlaceholder, isAllowedAvatarHost, getClientIp } from '../api/core';
-import type { GitHubCardData, ThemeConfig } from '../api/core';
+import { safeHex, renderSvg, escapeXml, fetchAvatarBase64, formatNumber, isPlaceholder, isAllowedAvatarHost, getClientIp } from '../src/core';
+import type { GitHubCardData, ThemeConfig } from '../src/core';
 
 describe('escapeXml', () => {
   it('escapes <', () => expect(escapeXml('<')).toBe('&lt;'));

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { renderSvg, renderErrorCard } from '../api/render';
-import { resolveTheme, themes } from '../api/themes';
-import type { StackOverflowCardData, TwitchCardData, ThemeConfig } from '../api/types';
+import { renderSvg, renderErrorCard } from '../src/render';
+import { resolveTheme, themes } from '../src/themes';
+import type { StackOverflowCardData, TwitchCardData, ThemeConfig } from '../src/types';
 
 describe('renderSvg - Stack Overflow Card', () => {
   const theme: ThemeConfig = themes.dark;

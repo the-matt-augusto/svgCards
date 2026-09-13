@@ -5,6 +5,6 @@
 .vercel
 node_modules
 dist
-docs/security-audit/.venv/
+docs/security-audit/
 __pycache__/
 .vscode/

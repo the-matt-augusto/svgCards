@@ -128,7 +128,9 @@ type CardData = GitHubCardData | StackOverflowCardData | TwitchCardData;
 
 Cada variante estende `BaseCardData` com campos específicos do provider (`memberSince`, `badges`, `isLive`, etc.). O campo `stats` é uma **lista** `{ label: string; value: string }[]`, não um objeto de campos fixos — o GitHub enfileira Estrelas e Sequência atual; o Stack Overflow enfileira Reputação e badges; a Twitch enfileira Viewers. Isso evita que um provider precise de um campo vazio que não faz sentido para ele.
 
-O núcleo (`handleRequest` em `core.ts`) cuida de resolução de tema, base64 do avatar, render do SVG, mapeamento de erros e headers de cache. Cada provider (`api/providers/*.ts`) implementa uma interface com um único método `fetch(id): Promise<CardData>`. Adicionar um novo provider é escrever essa função e registrar o nome no roteador — sem tocar no core.
+O núcleo (`handleRequest` em `core.ts`) cuida de resolução de tema, base64 do avatar, render do SVG, mapeamento de erros e headers de cache. Cada provider (`src/providers/*.ts`) implementa uma interface com um único método `fetch(id): Promise<CardData>`. Adicionar um novo provider é escrever essa função e registrar o nome no roteador — sem tocar no core.
+
+A pasta `api/` contém somente os quatro handlers publicados na Vercel. O código compartilhado fica em `src/` para não ser descoberto como funções adicionais, mantendo o deploy abaixo do limite de 12 funções do plano Hobby.
 
 Os endpoints `/api/github`, `/api/stackoverflow` e `/api/twitch` são cascas de duas linhas que chamam `handleRequest` com o provider fixo. O `/api/index` aceita `?provider=` dinamicamente.
 

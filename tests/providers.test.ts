@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ProviderError } from '../api/core';
-import { calculateStreak, validateGitHubResponse, GitHubProvider } from '../api/providers/github';
-import { validateStackOverflowResponse } from '../api/providers/stackoverflow';
-import { validateTwitchUserResponse } from '../api/providers/twitch';
+import { ProviderError } from '../src/core';
+import { calculateStreak, validateGitHubResponse, GitHubProvider } from '../src/providers/github';
+import { validateStackOverflowResponse } from '../src/providers/stackoverflow';
+import { validateTwitchUserResponse } from '../src/providers/twitch';
 
 describe('GitHub Provider - calculateStreak', () => {
   it('should handle case: hoje zerado conta ate ontem', () => {

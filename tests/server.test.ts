@@ -3,7 +3,7 @@ import http from 'node:http';
 import { AddressInfo } from 'node:net';
 // @ts-expect-error server.mjs is an ES module without dedicated TypeScript declarations
 import { buildWebHeaders, createRequestListener } from '../server.mjs';
-import * as core from '../api/core';
+import * as core from '../src/core';
 
 describe('server.mjs - Segurança e Controle de Abuso do Adaptador Local (A-02)', () => {
   beforeEach(() => {

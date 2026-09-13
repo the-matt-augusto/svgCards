@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fetchWithTimeout, handleRequest, resetRateLimits } from '../api/core';
+import { fetchWithTimeout, handleRequest, resetRateLimits } from '../src/core';
 
 describe('fetchWithTimeout', () => {
   beforeEach(() => {
@@ -379,7 +379,7 @@ describe('handleRequest - error caching and status codes', () => {
     });
 
     it('replaces unhandled runtime Error message with generic card text', async () => {
-      const { GitHubProvider } = await import('../api/providers/github');
+      const { GitHubProvider } = await import('../src/providers/github');
       vi.spyOn(GitHubProvider.prototype, 'fetch').mockRejectedValueOnce(
         new Error('Database connection failed at postgres://admin:secret@internal:5432')
       );

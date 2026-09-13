@@ -26,7 +26,7 @@ if (fs.existsSync(envPath)) {
 
 let core;
 try {
-  core = await import('./dist/api/core.js');
+  core = await import('./dist/src/core.js');
 } catch {
   console.error('\n[ERRO] O código compilado não foi encontrado em ./dist.');
   console.error('Execute: npm run build\n');

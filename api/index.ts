@@ -1,4 +1,4 @@
-import { handleRequest } from './core';
+import { handleRequest } from '../src/core';
 
 export const config = { runtime: 'edge' };
 
